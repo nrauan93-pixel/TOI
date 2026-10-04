@@ -164,7 +164,7 @@ def item_kb(item_id, back, uid):
 main_kb = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="🏛 Залы"), KeyboardButton(text="🎤 Тамада")],
-        [KeyboardButton(text="💰 Подбор по бюджету")],
+        [KeyboardButton(text="💰 Подбор по бюджету"), KeyboardButton(text="⭐ Избранное")],
         [KeyboardButton(text="📍 Моё местоположение", request_location=True)],
         [KeyboardButton(text="ℹ️ О боте")],
     ],
@@ -198,7 +198,7 @@ async def start(message: Message, state: FSMContext):
 async def help_cmd(message: Message):
     await message.answer(
         "/start — меню\n/halls — залы\n/hosts — тамада\n"
-        "/budget — подбор по бюджету\n/about — о боте"
+        "/budget — подбор по бюджету\n/favorites — избранное\n/about — о боте"
     )
 
 
@@ -367,6 +367,25 @@ async def about(message: Message):
     await message.answer("toi — помощник по выбору места и тамады для тоя.\nАвтор: Рауан.")
 
 
+@dp.message(Command("favorites"))
+@dp.message(F.text == "⭐ Избранное")
+async def favorites(message: Message, state: FSMContext):
+    await state.clear()
+    register(message.from_user)
+    uid = message.from_user.id
+    items = query_items(
+        "WHERE i.id IN (SELECT item_id FROM favorites WHERE user_id = ?)", (uid,), uid
+    )
+    if not items:
+        await message.answer("В избранном пока пусто. Открой зал или тамаду и нажми «⭐ В избранное».")
+        return
+    rows = []
+    for d in sort_items(items, "rating"):
+        label = f"{d['name']} · {money(d['price'])}" + (f" · ⭐{d['rating']}" if d["n"] else "")
+        rows.append([InlineKeyboardButton(text=label, callback_data=f"item:{d['id']}")])
+    await message.answer("⭐ Твоё избранное:", reply_markup=InlineKeyboardMarkup(inline_keyboard=rows))
+
+
 @dp.message(F.text)
 async def fallback(message: Message):
     await message.answer("Не понял 🤔 Выбери кнопку в меню или напиши /help")
@@ -380,6 +399,7 @@ async def main():
             BotCommand(command="halls", description="Залы"),
             BotCommand(command="hosts", description="Тамада"),
             BotCommand(command="budget", description="Подбор по бюджету"),
+            BotCommand(command="favorites", description="Избранное"),
             BotCommand(command="help", description="Помощь"),
             BotCommand(command="about", description="О боте"),
         ]
