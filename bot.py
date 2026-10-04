@@ -40,6 +40,9 @@ CREATE TABLE IF NOT EXISTS items (
 CREATE TABLE IF NOT EXISTS reviews (
     id INTEGER PRIMARY KEY AUTOINCREMENT, item_id INTEGER,
     user_id INTEGER, user_name TEXT, rating INTEGER, text TEXT);
+CREATE TABLE IF NOT EXISTS favorites (
+    user_id INTEGER, item_id INTEGER,
+    PRIMARY KEY (user_id, item_id));
 """
 )
 
