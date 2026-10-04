@@ -139,6 +139,27 @@ def list_view(kind, sort, uid):
     return text, InlineKeyboardMarkup(inline_keyboard=rows)
 
 
+def is_fav(uid, item_id):
+    row = db.execute(
+        "SELECT 1 FROM favorites WHERE user_id = ? AND item_id = ?", (uid, item_id)
+    ).fetchone()
+    return row is not None
+
+
+def item_kb(item_id, back, uid):
+    fav_text = "💔 Убрать из избранного" if is_fav(uid, item_id) else "⭐ В избранное"
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="💬 Отзывы", callback_data=f"revs:{item_id}"),
+                InlineKeyboardButton(text="✍️ Оставить отзыв", callback_data=f"addrev:{item_id}"),
+            ],
+            [InlineKeyboardButton(text=fav_text, callback_data=f"fav:{item_id}")],
+            [InlineKeyboardButton(text="◀️ К списку", callback_data=f"list:{back}:rating")],
+        ]
+    )
+
+
 # ---------------- Меню ----------------
 main_kb = ReplyKeyboardMarkup(
     keyboard=[
@@ -226,17 +247,29 @@ async def on_item(call: CallbackQuery):
     item_id = int(call.data.split(":")[1])
     d = query_items("WHERE i.id = ?", (item_id,), call.from_user.id)[0]
     back = "venue" if d["kind"] == "venue" else "host"
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(text="💬 Отзывы", callback_data=f"revs:{item_id}"),
-                InlineKeyboardButton(text="✍️ Оставить отзыв", callback_data=f"addrev:{item_id}"),
-            ],
-            [InlineKeyboardButton(text="◀️ К списку", callback_data=f"list:{back}:rating")],
-        ]
-    )
+    kb = item_kb(item_id, back, call.from_user.id)
     await call.message.edit_text(card(d), reply_markup=kb)
     await call.answer()
+
+
+@dp.callback_query(F.data.startswith("fav:"))
+async def on_fav(call: CallbackQuery):
+    item_id = int(call.data.split(":")[1])
+    uid = call.from_user.id
+    if is_fav(uid, item_id):
+        db.execute("DELETE FROM favorites WHERE user_id = ? AND item_id = ?", (uid, item_id))
+        msg = "Убрано из избранного"
+    else:
+        db.execute("INSERT INTO favorites (user_id, item_id) VALUES (?, ?)", (uid, item_id))
+        msg = "Добавлено в избранное ⭐"
+    db.commit()
+    d = query_items("WHERE i.id = ?", (item_id,), uid)[0]
+    back = "venue" if d["kind"] == "venue" else "host"
+    try:
+        await call.message.edit_reply_markup(reply_markup=item_kb(item_id, back, uid))
+    except TelegramBadRequest:
+        pass
+    await call.answer(msg)
 
 
 @dp.callback_query(F.data.startswith("revs:"))
