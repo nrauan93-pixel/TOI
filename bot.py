@@ -395,6 +395,14 @@ async def top(message: Message):
     await message.answer("\n".join(lines))
 
 
+@dp.message(Command("stats"))
+async def stats(message: Message):
+    venues = db.execute("SELECT COUNT(*) FROM items WHERE kind = 'venue'").fetchone()[0]
+    hosts = db.execute("SELECT COUNT(*) FROM items WHERE kind = 'host'").fetchone()[0]
+    reviews = db.execute("SELECT COUNT(*) FROM reviews").fetchone()[0]
+    await message.answer(f"📊 Залов: {venues}\n🎤 Тамада: {hosts}\n💬 Отзывов: {reviews}")
+
+
 @dp.message(F.text)
 async def fallback(message: Message):
     await message.answer("Не понял 🤔 Выбери кнопку в меню или напиши /help")
@@ -411,6 +419,7 @@ async def main():
             BotCommand(command="favorites", description="Избранное"),
             BotCommand(command="help", description="Помощь"),
             BotCommand(command="about", description="О боте"),
+            BotCommand(command="stats", description="Статистика"),
             BotCommand(command="top", description="Топ залов"),
         ]
     )
