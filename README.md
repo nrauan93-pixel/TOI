@@ -26,3 +26,4 @@ Telegram-бот для выбора места проведения тоя (пр
 
 ## Команда
 - nrauan93-pixel (https://github.com/nrauan93-pixel)
+ест коммита
