@@ -2,6 +2,7 @@ import asyncio
 import logging
 import math
 import os
+import random
 import sqlite3
 
 from aiogram import Bot, Dispatcher, F
@@ -198,7 +199,8 @@ async def start(message: Message, state: FSMContext):
 async def help_cmd(message: Message):
     await message.answer(
         "/start — меню\n/halls — залы\n/hosts — тамада\n"
-        "/budget — подбор по бюджету\n/favorites — избранное\n/about — о боте"
+        "/budget — подбор по бюджету\n/favorites — избранное\n/top — топ залов\n"
+        "/stats — статистика\n/random — случайный зал\n/about — о боте"
     )
 
 
@@ -403,6 +405,12 @@ async def stats(message: Message):
     await message.answer(f"📊 Залов: {venues}\n🎤 Тамада: {hosts}\n💬 Отзывов: {reviews}")
 
 
+@dp.message(Command("random"))
+async def random_venue(message: Message):
+    items = query_items("WHERE i.kind = 'venue'", (), message.from_user.id)
+    await message.answer(card(random.choice(items)))
+
+
 @dp.message(F.text)
 async def fallback(message: Message):
     await message.answer("Не понял 🤔 Выбери кнопку в меню или напиши /help")
@@ -419,6 +427,7 @@ async def main():
             BotCommand(command="favorites", description="Избранное"),
             BotCommand(command="help", description="Помощь"),
             BotCommand(command="about", description="О боте"),
+            BotCommand(command="random", description="Случайный зал"),
             BotCommand(command="stats", description="Статистика"),
             BotCommand(command="top", description="Топ залов"),
         ]
