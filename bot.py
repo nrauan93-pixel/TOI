@@ -7,7 +7,7 @@ import sqlite3
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.exceptions import TelegramBadRequest
-from aiogram.filters import Command, CommandStart
+from aiogram.filters import Command, CommandObject, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import (
@@ -140,6 +140,25 @@ def list_view(kind, sort, uid):
     return text, InlineKeyboardMarkup(inline_keyboard=rows)
 
 
+def items_keyboard(items):
+    rows = []
+    for d in items:
+        label = f"{d['name']} · {money(d['price'])}" + (f" · ⭐{d['rating']}" if d["n"] else "")
+        if d["dist"] is not None:
+            label += f" · {d['dist']:.1f} км"
+        rows.append([InlineKeyboardButton(text=label, callback_data=f"item:{d['id']}")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def search_items(text, uid):
+    q = text.strip().casefold()
+    found = [
+        d for d in query_items("", (), uid)
+        if q in d["name"].casefold() or q in (d["info"] or "").casefold()
+    ]
+    return sort_items(found, "rating")
+
+
 def is_fav(uid, item_id):
     row = db.execute(
         "SELECT 1 FROM favorites WHERE user_id = ? AND item_id = ?", (uid, item_id)
@@ -167,7 +186,7 @@ main_kb = ReplyKeyboardMarkup(
         [KeyboardButton(text="🏛 Залы"), KeyboardButton(text="🎤 Тамада")],
         [KeyboardButton(text="💰 Подбор по бюджету"), KeyboardButton(text="⭐ Избранное")],
         [KeyboardButton(text="📍 Моё местоположение", request_location=True)],
-        [KeyboardButton(text="ℹ️ О боте")],
+        [KeyboardButton(text="🔍 Поиск"), KeyboardButton(text="ℹ️ О боте")],
     ],
     resize_keyboard=True,
 )
@@ -180,6 +199,10 @@ class Budget(StatesGroup):
 
 class Review(StatesGroup):
     text = State()
+
+
+class Search(StatesGroup):
+    query = State()
 
 
 # ---------------- Хендлеры ----------------
@@ -200,7 +223,8 @@ async def help_cmd(message: Message):
     await message.answer(
         "/start — меню\n/halls — залы\n/hosts — тамада\n"
         "/budget — подбор по бюджету\n/favorites — избранное\n/top — топ залов\n"
-        "/stats — статистика\n/random — случайный зал\n/about — о боте"
+        "/stats — статистика\n/random — случайный зал\n/about — о боте\n"
+        "/search — поиск по названию"
     )
 
 
@@ -231,6 +255,28 @@ async def hosts(message: Message, state: FSMContext):
     register(message.from_user)
     text, kb = list_view("host", "rating", message.from_user.id)
     await message.answer(text, reply_markup=kb)
+
+
+async def send_search(message: Message, text):
+    found = search_items(text, message.from_user.id)
+    if not found:
+        await message.answer(f"По запросу «{text}» ничего не нашлось 🤷 Попробуй другое слово.")
+        return
+    header = f"🔍 Найдено: {len(found)}" + (" (показаны первые 10)" if len(found) > 10 else "")
+    await message.answer(header, reply_markup=items_keyboard(found[:10]))
+
+
+@dp.message(Command("search"))
+@dp.message(F.text == "🔍 Поиск")
+async def search_start(message: Message, state: FSMContext, command: CommandObject = None):
+    await state.clear()
+    register(message.from_user)
+    text = (command.args or "").strip() if command else ""
+    if text:
+        await send_search(message, text)
+        return
+    await state.set_state(Search.query)
+    await message.answer("Что ищем? Напиши название или слово из описания, например: шанырак")
 
 
 @dp.callback_query(F.data.startswith("list:"))
@@ -411,6 +457,12 @@ async def random_venue(message: Message):
     await message.answer(card(random.choice(items)))
 
 
+@dp.message(Search.query, F.text)
+async def search_query(message: Message, state: FSMContext):
+    await state.clear()
+    await send_search(message, message.text)
+
+
 @dp.message(F.text)
 async def fallback(message: Message):
     await message.answer("Не понял 🤔 Выбери кнопку в меню или напиши /help")
@@ -430,6 +482,7 @@ async def main():
             BotCommand(command="random", description="Случайный зал"),
             BotCommand(command="stats", description="Статистика"),
             BotCommand(command="top", description="Топ залов"),
+            BotCommand(command="search", description="Поиск"),
         ]
     )
     await dp.start_polling(bot)
