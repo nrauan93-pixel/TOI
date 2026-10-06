@@ -1,4 +1,4 @@
-﻿import asyncio
+import asyncio
 import logging
 import math
 import os
@@ -386,6 +386,15 @@ async def favorites(message: Message, state: FSMContext):
     await message.answer("⭐ Твоё избранное:", reply_markup=InlineKeyboardMarkup(inline_keyboard=rows))
 
 
+@dp.message(Command("top"))
+async def top(message: Message):
+    items = query_items("WHERE i.kind = 'venue'", (), message.from_user.id)
+    lines = ["🏆 Топ-3 зала по рейтингу:\n"]
+    for i, d in enumerate(sort_items(items, "rating")[:3], 1):
+        lines.append(f"{i}. {d['name']} — {money(d['price'])}" + (f" · ⭐{d['rating']}" if d["n"] else ""))
+    await message.answer("\n".join(lines))
+
+
 @dp.message(F.text)
 async def fallback(message: Message):
     await message.answer("Не понял 🤔 Выбери кнопку в меню или напиши /help")
@@ -402,6 +411,7 @@ async def main():
             BotCommand(command="favorites", description="Избранное"),
             BotCommand(command="help", description="Помощь"),
             BotCommand(command="about", description="О боте"),
+            BotCommand(command="top", description="Топ залов"),
         ]
     )
     await dp.start_polling(bot)
