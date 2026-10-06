@@ -185,7 +185,7 @@ main_kb = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="🏛 Залы"), KeyboardButton(text="🎤 Тамада")],
         [KeyboardButton(text="💰 Подбор по бюджету"), KeyboardButton(text="⭐ Избранное")],
-        [KeyboardButton(text="📍 Моё местоположение", request_location=True)],
+        [KeyboardButton(text="📍 Моё местоположение", request_location=True), KeyboardButton(text="📍 Рядом")],
         [KeyboardButton(text="🔍 Поиск"), KeyboardButton(text="ℹ️ О боте")],
     ],
     resize_keyboard=True,
@@ -224,7 +224,7 @@ async def help_cmd(message: Message):
         "/start — меню\n/halls — залы\n/hosts — тамада\n"
         "/budget — подбор по бюджету\n/favorites — избранное\n/top — топ залов\n"
         "/stats — статистика\n/random — случайный зал\n/about — о боте\n"
-        "/search — поиск по названию"
+        "/search — поиск по названию\n/nearby — ближайшие залы"
     )
 
 
@@ -277,6 +277,20 @@ async def search_start(message: Message, state: FSMContext, command: CommandObje
         return
     await state.set_state(Search.query)
     await message.answer("Что ищем? Напиши название или слово из описания, например: шанырак")
+
+
+@dp.message(Command("nearby"))
+@dp.message(F.text == "📍 Рядом")
+async def nearby(message: Message, state: FSMContext):
+    await state.clear()
+    register(message.from_user)
+    venues = query_items("WHERE i.kind = 'venue'", (), message.from_user.id)
+    venues = [d for d in venues if d["dist"] is not None]
+    if not venues:
+        await message.answer("Я пока не знаю, где ты 🤷 Нажми «📍 Моё местоположение», и я покажу ближайшие залы.")
+        return
+    nearest = sort_items(venues, "dist")[:3]
+    await message.answer("📍 Ближайшие к тебе залы:", reply_markup=items_keyboard(nearest))
 
 
 @dp.callback_query(F.data.startswith("list:"))
@@ -483,6 +497,7 @@ async def main():
             BotCommand(command="stats", description="Статистика"),
             BotCommand(command="top", description="Топ залов"),
             BotCommand(command="search", description="Поиск"),
+            BotCommand(command="nearby", description="Ближайшие залы"),
         ]
     )
     await dp.start_polling(bot)
