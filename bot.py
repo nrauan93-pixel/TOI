@@ -186,7 +186,8 @@ main_kb = ReplyKeyboardMarkup(
         [KeyboardButton(text="🏛 Залы"), KeyboardButton(text="🎤 Тамада")],
         [KeyboardButton(text="💰 Подбор по бюджету"), KeyboardButton(text="⭐ Избранное")],
         [KeyboardButton(text="📍 Моё местоположение", request_location=True), KeyboardButton(text="📍 Рядом")],
-        [KeyboardButton(text="🔍 Поиск"), KeyboardButton(text="ℹ️ О боте")],
+        [KeyboardButton(text="🔍 Поиск"), KeyboardButton(text="💬 Мои отзывы")],
+        [KeyboardButton(text="ℹ️ О боте")],
     ],
     resize_keyboard=True,
 )
@@ -224,7 +225,7 @@ async def help_cmd(message: Message):
         "/start — меню\n/halls — залы\n/hosts — тамада\n"
         "/budget — подбор по бюджету\n/favorites — избранное\n/top — топ залов\n"
         "/stats — статистика\n/random — случайный зал\n/about — о боте\n"
-        "/search — поиск по названию\n/nearby — ближайшие залы"
+        "/search — поиск по названию\n/nearby — ближайшие залы\n/myreviews — мои отзывы"
     )
 
 
@@ -291,6 +292,28 @@ async def nearby(message: Message, state: FSMContext):
         return
     nearest = sort_items(venues, "dist")[:3]
     await message.answer("📍 Ближайшие к тебе залы:", reply_markup=items_keyboard(nearest))
+
+
+@dp.message(Command("myreviews"))
+@dp.message(F.text == "💬 Мои отзывы")
+async def my_reviews(message: Message, state: FSMContext):
+    await state.clear()
+    register(message.from_user)
+    rows = db.execute(
+        "SELECT i.name, r.rating, r.text FROM reviews r JOIN items i ON i.id = r.item_id "
+        "WHERE r.user_id = ? ORDER BY r.id DESC LIMIT 10",
+        (message.from_user.id,),
+    ).fetchall()
+    if not rows:
+        await message.answer("Ты пока не оставлял отзывов. Открой зал или тамаду и нажми «✍️ Оставить отзыв».")
+        return
+    blocks = []
+    for r in rows:
+        block = f"{'⭐' * r['rating']} {r['name']}"
+        if r["text"]:
+            block += f"\n{r['text'][:300]}"
+        blocks.append(block)
+    await message.answer("💬 Твои отзывы:\n\n" + "\n\n".join(blocks))
 
 
 @dp.callback_query(F.data.startswith("list:"))
@@ -498,6 +521,7 @@ async def main():
             BotCommand(command="top", description="Топ залов"),
             BotCommand(command="search", description="Поиск"),
             BotCommand(command="nearby", description="Ближайшие залы"),
+            BotCommand(command="myreviews", description="Мои отзывы"),
         ]
     )
     await dp.start_polling(bot)
