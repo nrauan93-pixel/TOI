@@ -186,13 +186,29 @@ def item_kb(item_id, back, uid):
 
 
 # ---------------- Меню ----------------
+MORE_BTN = "\u2795 \u0415\u0449\u0451"
+BACK_BTN = "\u25c0\ufe0f \u041d\u0430\u0437\u0430\u0434"
+TOP_BTN = "\U0001F3C6 \u0422\u043e\u043f \u0437\u0430\u043b\u043e\u0432"
+RANDOM_BTN = "\U0001F3B2 \u0421\u043b\u0443\u0447\u0430\u0439\u043d\u044b\u0439 \u0437\u0430\u043b"
+STATS_BTN = "\U0001F4CA \u0421\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043a\u0430"
+
 main_kb = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="🏛 Залы"), KeyboardButton(text="🎤 Тамада")],
         [KeyboardButton(text="💰 Подбор по бюджету"), KeyboardButton(text="⭐ Избранное")],
         [KeyboardButton(text="📍 Моё местоположение", request_location=True), KeyboardButton(text="📍 Рядом")],
+        [KeyboardButton(text=MORE_BTN)],
+    ],
+    resize_keyboard=True,
+)
+
+more_kb = ReplyKeyboardMarkup(
+    keyboard=[
         [KeyboardButton(text="🔍 Поиск"), KeyboardButton(text="💬 Мои отзывы")],
+        [KeyboardButton(text=TOP_BTN), KeyboardButton(text=RANDOM_BTN)],
+        [KeyboardButton(text=STATS_BTN)],
         [KeyboardButton(text="ℹ️ О боте")],
+        [KeyboardButton(text=BACK_BTN)],
     ],
     resize_keyboard=True,
 )
@@ -212,6 +228,36 @@ class Search(StatesGroup):
 
 
 # ---------------- Хендлеры ----------------
+@dp.message(F.text == MORE_BTN)
+async def show_more(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer("\u0414\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u0435\u043b\u044c\u043d\u043e:", reply_markup=more_kb)
+
+
+@dp.message(F.text == BACK_BTN)
+async def show_main(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer("\u0413\u043b\u0430\u0432\u043d\u043e\u0435 \u043c\u0435\u043d\u044e:", reply_markup=main_kb)
+
+
+@dp.message(F.text == TOP_BTN)
+async def btn_top(message: Message, state: FSMContext):
+    await state.clear()
+    await top(message)
+
+
+@dp.message(F.text == RANDOM_BTN)
+async def btn_random(message: Message, state: FSMContext):
+    await state.clear()
+    await random_venue(message)
+
+
+@dp.message(F.text == STATS_BTN)
+async def btn_stats(message: Message, state: FSMContext):
+    await state.clear()
+    await stats(message)
+
+
 @dp.message(CommandStart())
 async def start(message: Message, state: FSMContext):
     await state.clear()
