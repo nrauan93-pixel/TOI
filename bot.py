@@ -24,11 +24,16 @@ from dotenv import load_dotenv
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
 
-bot = Bot(token=os.getenv("BOT_TOKEN"))
+TOKEN = os.getenv("BOT_TOKEN")
+if not TOKEN:
+    raise SystemExit("BOT_TOKEN is not set")
+bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
 # ---------------- База данных ----------------
-db = sqlite3.connect("toi.db")
+DB_PATH = os.getenv("DB_PATH", "toi.db")
+os.makedirs(os.path.dirname(DB_PATH) or ".", exist_ok=True)
+db = sqlite3.connect(DB_PATH)
 db.row_factory = sqlite3.Row
 db.executescript(
     """
