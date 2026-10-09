@@ -42,6 +42,6 @@ python bot.py
 
 | Участник | GitHub | Роль |
 |---|---|---|
-| ИМЯ 1 | [nrauan93-pixel](https://github.com/nrauan93-pixel) | main developer |
-| ИМЯ 2 | https://github.com/meirzhanmamaev | Helper |
-| ИМЯ 3 | https://github.com/dinaraimashova83-cmyk | fullstack |
+| Рауан | [nrauan93-pixel](https://github.com/nrauan93-pixel) | Lead developer |
+| Мейржан | https://github.com/meirzhanmamaev | Product manager |
+| Диас | https://github.com/dinaraimashova83-cmyk | Web developer |
