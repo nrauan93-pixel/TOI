@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block title %}{{ service.title }} — TOIIM{% endblock %}
+{% block description %}{{ service.short_description }}{% endblock %}
+
+{% block content %}
+<section class="page-head page-head-compact">
+  <div class="container">
+    <nav class="breadcrumbs" aria-label="Навигация">
+      <a href="{% url 'core:home' %}">Главная</a>{% icon "chevron-right" 14 %}
+      <a href="{% url 'catalog:list' %}?category={{ service.category.slug }}">{{ service.category.name }}</a>{% icon "chevron-right" 14 %}
+      <span aria-current="page">{{ service.title }}</span>
+    </nav>
+  </div>
+</section>
+
+<section class="section section-tight">
+  <div class="container detail-layout">
+    <div class="detail-main">
+      <div class="gallery">
+        {% with images=service.images.all %}
+        {% if images %}
+          {% for image in images|slice:":3" %}
+          <figure class="gallery-item{% if forloop.first %} is-main{% endif %}"><img src="{{ image.url }}" alt="{{ image.alt|default:service.title }}" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}" width="960" height="720" data-img></figure>
+          {% endfor %}
+        {% else %}
+          <figure class="gallery-item is-main"><span class="media-placeholder media-placeholder-lg">{% icon service.category.icon 56 %}<span class="placeholder-note">Фото пока не добавлены</span></span></figure>
+        {% endif %}
+        {% endwith %}
+      </div>
+
+      <div class="detail-header">
+        <div class="tag-row">
+          <span class="tag">{% icon service.category.icon 14 %}{{ service.category.name }}</span>
+          <span class="tag">{% icon "map-pin" 14 %}{{ service.city.name }}</span>
+          {% if service.is_verified %}<span class="tag tag-verified">{% icon "badge-check" 14 %}Проверено TOIIM</span>{% endif %}
+          {% if service.is_demo %}<span class="tag tag-demo">{% icon "info" 14 %}Демо-карточка</span>{% endif %}
+        </div>
+        <h1>{{ service.title }}</h1>
+        <p class="lead-dark">{{ service.short_description }}</p>
+        {% if service.reviews_count %}
+        <p class="rating rating-lg">{% icon "star" 18 "icon-star" %}{{ service.rating_avg|floatformat:1 }} <span>· {{ service.reviews_count|ru_plural:"отзыв,отзыва,отзывов" }}</span></p>
+        {% endif %}
+      </div>
+
+      {% if service.is_demo %}
+      <div class="notice">{% icon "info" 20 %}<p>Это пример для демонстрации TOIIM: компания вымышленная, цены примерные. Заявка сохранится в базе, но реальный исполнитель её не получит.</p></div>
+      {% endif %}
+
+      <dl class="facts">
+        <div><dt>{% icon "wallet" 18 %}Цена</dt><dd>от {{ service.price_from|tenge }} {{ service.get_price_unit_display }}</dd></div>
+        {% if service.capacity_max %}<div><dt>{% icon "users" 18 %}Вместимость</dt><dd>{% if service.capacity_min %}{{ service.capacity_min }}–{% endif %}{{ service.capacity_max }} гостей</dd></div>{% endif %}
+        {% if service.address %}<div><dt>{% icon "map-pin" 18 %}Адрес</dt><dd>{{ service.address }}</dd></div>{% endif %}
+        {% if service.phone %}<div><dt>{% icon "phone" 18 %}Телефон</dt><dd><a href="tel:{{ service.phone }}">{{ service.phone }}</a></dd></div>{% endif %}
+        {% if service.instagram %}<div><dt>{% icon "instagram" 18 %}Instagram</dt><dd><a href="https://instagram.com/{{ service.instagram }}" target="_blank" rel="noopener">@{{ service.instagram }}</a></dd></div>{% endif %}
+      </dl>
+
+      {% if service.description %}
+      <div class="prose"><h2>Описание</h2>{{ service.description|linebreaks }}</div>
+      {% endif %}
+
+      <div class="reviews" id="reviews">
+        <h2>Отзывы</h2>
+        {% if user.is_authenticated and not is_owner %}
+        <form class="review-form" method="post" action="{% url 'catalog:review' service.slug %}" data-once>
+          {% csrf_token %}
+          <h3>{% if my_review %}Изменить ваш отзыв{% else %}Оставить отзыв{% endif %}</h3>
+          <fieldset class="star-input">
+            <legend>Оценка</legend>
+            {% for value in "54321" %}
+            <input type="radio" name="rating" value="{{ value }}" id="rate-{{ value }}" {% if review_form.rating.value|stringformat:"s" == value %}checked{% endif %} required>
+            <label for="rate-{{ value }}" title="{{ value }} из 5">{% icon "star" 26 %}<span class="visually-hidden">{{ value }} из 5</span></label>
+            {% endfor %}
+          </fieldset>
+          <div class="field">
+            <label for="id_text">Ваш отзыв</label>
+            {{ review_form.text }}
+          </div>
+          <button class="btn btn-navy" type="submit" data-loading-text="Сохраняем…">{% icon "check" 18 %}<span>{% if my_review %}Сохранить изменения{% else %}Опубликовать отзыв{% endif %}</span></button>
+        </form>
+        {% elif not user.is_authenticated %}
+        <p class="review-login">{% icon "log-in" 18 %}<a href="{% url 'accounts:login' %}?next={{ service.get_absolute_url|urlencode }}%23reviews">Войдите</a>, чтобы оставить отзыв.</p>
+        {% endif %}
+        {% for review in reviews %}
+        <article class="review">
+          <header><strong>{{ review.user.first_name|default:review.user.username }}</strong><span class="stars" aria-label="Оценка {{ review.rating }} из 5">{% for i in "12345" %}{% if forloop.counter <= review.rating %}{% icon "star" 14 "icon-star" %}{% else %}{% icon "star" 14 "icon-star-empty" %}{% endif %}{% endfor %}</span><time datetime="{{ review.created_at|date:'c' }}">{{ review.created_at|date:"d.m.Y" }}</time></header>
+          <p>{{ review.text }}</p>
+        </article>
+        {% empty %}
+        <p class="empty-inline">Отзывов пока нет.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <aside class="detail-aside" id="request">
+      <div class="request-card">
+        <p class="price price-lg"><span class="price-from">от</span> {{ service.price_from|tenge }} <span class="price-unit">{{ service.get_price_unit_display }}</span></p>
+        <h2>Оставить заявку</h2>
+        <form method="post" action="{{ service.get_absolute_url }}#request" novalidate data-once>
+          {% csrf_token %}
+          {{ form.idempotency_key }}
+          {% if form.non_field_errors %}<p class="form-error" role="alert">{{ form.non_field_errors|join:" " }}</p>{% endif %}
+          {% for field in form.visible_fields %}
+          <div class="field{% if field.errors %} has-error{% endif %}">
+            <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span class="req" aria-hidden="true">*</span>{% endif %}</label>
+            {{ field }}
+            {% for error in field.errors %}<p class="field-error" id="{{ field.id_for_label }}-error">{{ error }}</p>{% endfor %}
+          </div>
+          {% endfor %}
+          <button class="btn btn-gold btn-block btn-lg" type="submit" data-loading-text="Отправляем…">{% icon "send" 18 %}<span>Отправить заявку</span></button>
+          <p class="form-hint">Нажимая кнопку, вы соглашаетесь, что исполнитель свяжется с вами по телефону.</p>
+        </form>
+        <div class="divider"><span>или</span></div>
+        <div class="aside-actions">
+        {% include "partials/favorite_button.html" with style="full" %}
+        <a class="btn btn-outline btn-block" href="{{ TELEGRAM_BOT_URL }}?start=service_{{ service.pk }}" target="_blank" rel="noopener">{% icon "send" 18 %}<span>Спросить в Telegram-боте</span></a>
+        </div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<a class="btn btn-gold btn-lg mobile-cta" href="#request">{% icon "send" 18 %}<span>Оставить заявку</span></a>
+
+{% if similar %}
+<section class="section section-muted">
+  <div class="container">
+    <div class="section-head"><h2>Похожие предложения</h2><a class="link-arrow" href="{% url 'catalog:list' %}?category={{ service.category.slug }}">Все {{ service.category.name|lower }} {% icon "arrow-right" 18 %}</a></div>
+    <div class="card-grid">{% for service in similar %}{% include "partials/service_card.html" %}{% endfor %}</div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

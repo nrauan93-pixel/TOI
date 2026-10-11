@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block title %}{{ page_title }} — TOIIM{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <nav class="breadcrumbs" aria-label="Навигация"><a href="{% url 'core:home' %}">Главная</a>{% icon "chevron-right" 14 %}<span aria-current="page">{{ page_title }}</span></nav>
+    <h1>{{ page_title }}</h1>
+    <p class="page-sub">{{ page.paginator.count|ru_plural:"предложение,предложения,предложений" }}</p>
+  </div>
+</section>
+
+<section class="section section-tight">
+  <div class="container catalog-layout">
+    <details class="filters" open data-filters>
+      <summary class="filters-toggle">{% icon "sliders-horizontal" 18 %}<span>Фильтры</span>{% icon "chevron-down" 18 "chev" %}</summary>
+      <form class="filters-form" method="get" action="{% url 'catalog:list' %}">
+        <div class="field">
+          <label for="f-q">Поиск</label>
+          <div class="input-icon">{% icon "search" 18 %}<input id="f-q" type="search" name="q" value="{{ form.q.value|default:'' }}" placeholder="Название или описание"></div>
+        </div>
+        <div class="field">
+          <label for="f-kind">Тип</label>
+          <select id="f-kind" name="kind">
+            {% for value, label in form.fields.kind.choices %}<option value="{{ value }}"{% if active_kind == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-city">Город</label>
+          <select id="f-city" name="city">
+            <option value="">Все города</option>
+            {% for city in form.fields.city.queryset %}<option value="{{ city.slug }}"{% if form.city.value == city.slug %} selected{% endif %}>{{ city.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-category">Категория</label>
+          <select id="f-category" name="category">
+            <option value="">Все категории</option>
+            {% for cat in categories %}<option value="{{ cat.slug }}"{% if form.category.value == cat.slug %} selected{% endif %}>{{ cat.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="f-guests">Гостей</label>
+            <input id="f-guests" type="number" name="guests" min="1" max="5000" inputmode="numeric" value="{{ form.guests.value|default:'' }}">
+          </div>
+          <div class="field">
+            <label for="f-budget">Бюджет до, ₸</label>
+            <input id="f-budget" type="number" name="budget" min="0" step="10000" inputmode="numeric" value="{{ form.budget.value|default:'' }}">
+          </div>
+        </div>
+        {% if form.date.value %}<input type="hidden" name="date" value="{{ form.date.value }}">{% endif %}
+        <div class="field">
+          <label for="f-sort">Сортировка</label>
+          <select id="f-sort" name="sort">
+            {% for value, label in form.fields.sort.choices %}<option value="{{ value }}"{% if form.sort.value == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+          </select>
+        </div>
+        {% if form.errors %}<p class="form-error" role="alert">{% icon "circle-alert" 16 %}Некоторые значения фильтра неверные и не учтены.</p>{% endif %}
+        <button class="btn btn-navy btn-block" type="submit">{% icon "search" 18 %}<span>Показать</span></button>
+        {% if has_filters %}<a class="btn btn-ghost-dark btn-block" href="{% url 'catalog:list' %}">{% icon "rotate-ccw" 18 %}<span>Сбросить фильтры</span></a>{% endif %}
+      </form>
+    </details>
+
+    <div class="catalog-results">
+      {% if page.object_list %}
+        <div class="card-grid card-grid-3">
+          {% for service in page.object_list %}{% include "partials/service_card.html" %}{% endfor %}
+        </div>
+
+        {% if page.has_other_pages %}
+        <nav class="pagination" aria-label="Страницы">
+          {% if page.has_previous %}<a class="page-btn" href="?{% query_replace page=page.previous_page_number %}" aria-label="Предыдущая страница">←</a>{% endif %}
+          {% for num in page.paginator.page_range %}
+            {% if num == page.number %}<span class="page-btn is-current" aria-current="page">{{ num }}</span>
+            {% else %}<a class="page-btn" href="?{% query_replace page=num %}">{{ num }}</a>{% endif %}
+          {% endfor %}
+          {% if page.has_next %}<a class="page-btn" href="?{% query_replace page=page.next_page_number %}" aria-label="Следующая страница">→</a>{% endif %}
+        </nav>
+        {% endif %}
+      {% else %}
+        <div class="empty-state">
+          <span class="empty-icon">{% icon "search-x" 32 %}</span>
+          <h2>Ничего не нашлось</h2>
+          <p>Попробуйте другой город, увеличьте бюджет или уберите часть фильтров.</p>
+          <a class="btn btn-navy" href="{% url 'catalog:list' %}">{% icon "rotate-ccw" 18 %}<span>Сбросить фильтры</span></a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}
