@@ -1,0 +1,27 @@
+{% load ui %}
+<article class="card service-card">
+  <a class="card-media" href="{{ service.get_absolute_url }}" tabindex="-1" aria-hidden="true">
+    {% with cover=service.cover %}
+    {% if cover %}
+      <img src="{{ cover.url }}" alt="{{ cover.alt|default:service.title }}" loading="lazy" width="640" height="480" data-img>
+    {% else %}
+      <span class="media-placeholder">{% icon service.category.icon 40 %}</span>
+    {% endif %}
+    {% endwith %}
+    {% if service.is_demo %}<span class="badge badge-demo">демо</span>{% endif %}
+  </a>
+  {% include "partials/favorite_button.html" with style="icon" %}
+  <div class="card-body">
+    <p class="card-meta">{% icon service.category.icon 16 %}{{ service.category.name }} · {{ service.city.name }}</p>
+    <h3 class="card-title"><a href="{{ service.get_absolute_url }}">{{ service.title }}</a></h3>
+    <p class="card-text">{{ service.short_description }}</p>
+    <div class="card-footer">
+      <p class="price"><span class="price-from">от</span> {{ service.price_from|tenge }} <span class="price-unit">{{ service.get_price_unit_display }}</span></p>
+      {% if service.reviews_count %}
+      <p class="rating" aria-label="Рейтинг {{ service.rating_avg|floatformat:1 }} из 5, отзывов: {{ service.reviews_count }}">
+        {% icon "star" 16 "icon-star" %}{{ service.rating_avg|floatformat:1 }} <span>({{ service.reviews_count }})</span>
+      </p>
+      {% endif %}
+    </div>
+  </div>
+</article>

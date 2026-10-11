@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% load static ui %}
+
+{% block content %}
+<section class="hero" aria-labelledby="hero-title">
+  <div class="container hero-grid">
+    <div class="hero-copy">
+      <p class="eyebrow">Свадьба · Той · Мерейтой · Қыз ұзату</p>
+      <h1 id="hero-title">Тойыңызға керектінің бәрі — бір жерде</h1>
+      <p class="lead">Площадки, ведущие, музыка, фото и видео по всему Казахстану. Сравните цены, оставьте заявку и посчитайте бюджет за несколько минут.</p>
+      <ul class="hero-stats" aria-label="TOIIM в цифрах">
+        <li><strong>{{ stats.services }}</strong><span>услуг в каталоге</span></li>
+        <li><strong>{{ stats.cities }}</strong><span>городов</span></li>
+        <li><strong>{{ stats.categories }}</strong><span>категорий</span></li>
+      </ul>
+    </div>
+    <div class="hero-visual{% if hero_image %} has-photo{% endif %}">
+      {% if hero_image %}
+        <img src="{% static hero_image %}" alt="Казахская свадьба: молодожёны и гости за праздничным столом" width="720" height="900">
+      {% else %}
+        <div class="hero-emblem" aria-hidden="true">
+          <img src="{% static 'img/logo-t.png' %}" alt="" width="256" height="256">
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="container">
+    <form class="search-panel" action="{% url 'catalog:list' %}" method="get" role="search" aria-label="Поиск по каталогу">
+      <div class="field">
+        <label for="s-city">{% icon "map-pin" 16 %}Город</label>
+        <select id="s-city" name="city">
+          <option value="">Все города</option>
+          {% for city in search_form.fields.city.queryset %}<option value="{{ city.slug }}">{{ city.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="s-category">{% icon "layout-grid" 16 %}Категория</label>
+        <select id="s-category" name="category">
+          <option value="">Все категории</option>
+          {% for cat in categories %}<option value="{{ cat.slug }}">{{ cat.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="s-date">{% icon "calendar" 16 %}Дата</label>
+        <input id="s-date" type="date" name="date">
+      </div>
+      <div class="field">
+        <label for="s-guests">{% icon "users" 16 %}Гостей</label>
+        <input id="s-guests" type="number" name="guests" min="1" max="5000" inputmode="numeric" placeholder="200">
+      </div>
+      <div class="field">
+        <label for="s-budget">{% icon "wallet" 16 %}Бюджет до, ₸</label>
+        <input id="s-budget" type="number" name="budget" min="0" step="10000" inputmode="numeric" placeholder="5 000 000">
+      </div>
+      <button class="btn btn-gold btn-lg" type="submit">{% icon "search" 20 %}<span>Найти</span></button>
+    </form>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="cat-title">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow eyebrow-dark">Категории</p>
+        <h2 id="cat-title">Что нужно для вашего тоя</h2>
+      </div>
+      <a class="link-arrow" href="{% url 'catalog:list' %}">Весь каталог {% icon "arrow-right" 18 %}</a>
+    </div>
+    <ul class="category-grid">
+      {% for cat in categories %}
+      <li>
+        <a class="category-tile" href="{% url 'catalog:list' %}?category={{ cat.slug }}">
+          <span class="category-icon">{% icon cat.icon 24 %}</span>
+          <span class="category-name">{{ cat.name }}</span>
+          <span class="category-count">{{ cat.total|ru_plural:"предложение,предложения,предложений" }}</span>
+        </a>
+      </li>
+      {% empty %}
+      <li class="empty-inline">Категории пока не добавлены. Запустите <code>python manage.py seed_demo</code>.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+
+<section class="section section-muted" aria-labelledby="venues-title">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow eyebrow-dark">Популярное</p>
+        <h2 id="venues-title">Площадки с высоким рейтингом</h2>
+      </div>
+      <a class="link-arrow" href="{% url 'catalog:list' %}?kind=venue">Все площадки {% icon "arrow-right" 18 %}</a>
+    </div>
+    <div class="card-grid">
+      {% for service in venues %}{% include "partials/service_card.html" %}{% empty %}<p class="empty-inline">Площадок пока нет.</p>{% endfor %}
+    </div>
+
+    <div class="section-head section-head-spaced">
+      <h2>Ведущие, музыка, фото и видео</h2>
+      <a class="link-arrow" href="{% url 'catalog:list' %}?kind=performer">Все исполнители {% icon "arrow-right" 18 %}</a>
+    </div>
+    <div class="card-grid">
+      {% for service in performers %}{% include "partials/service_card.html" %}{% empty %}<p class="empty-inline">Исполнителей пока нет.</p>{% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section" id="how" aria-labelledby="how-title">
+  <div class="container">
+    <p class="eyebrow eyebrow-dark">Как это работает</p>
+    <h2 id="how-title">Четыре шага до праздника</h2>
+    <ol class="steps">
+      <li><span class="step-icon">{% icon "search" 22 %}</span><h3>Найдите</h3><p>Выберите город, дату и число гостей. Каталог покажет только подходящие варианты.</p></li>
+      <li><span class="step-icon">{% icon "list-checks" 22 %}</span><h3>Сравните</h3><p>Цены, вместимость, рейтинг и отзывы на одной странице.</p></li>
+      <li><span class="step-icon">{% icon "message-circle" 22 %}</span><h3>Оставьте заявку</h3><p>На сайте или в Telegram-боте. Заявка сохраняется и доходит до исполнителя.</p></li>
+      <li><span class="step-icon">{% icon "sparkles" 22 %}</span><h3>Празднуйте</h3><p>Держите бюджет под контролем с калькулятором TOIIM.</p></li>
+    </ol>
+  </div>
+</section>
+
+<section class="section section-navy" id="budget" aria-labelledby="budget-title">
+  <div class="container budget-grid">
+    <div>
+      <p class="eyebrow">Калькулятор бюджета</p>
+      <h2 id="budget-title">Сколько будет стоить ваш той</h2>
+      <p class="lead lead-sm">Меняйте цифры, итог пересчитывается сразу. Все суммы в тенге.</p>
+    </div>
+    <form class="budget-card" data-budget novalidate>
+      <div class="budget-fields">
+        <div class="field"><label for="b-guests">Гостей</label><input id="b-guests" name="guests" type="number" min="1" max="5000" value="200" inputmode="numeric"></div>
+        <div class="field"><label for="b-menu">Меню на гостя, ₸</label><input id="b-menu" name="menu" type="number" min="0" step="500" value="12000" inputmode="numeric"></div>
+        <div class="field"><label for="b-venue">Аренда зала, ₸</label><input id="b-venue" name="venue" type="number" min="0" step="10000" value="0" inputmode="numeric"></div>
+        <div class="field"><label for="b-host">Ведущий / тамада, ₸</label><input id="b-host" name="host" type="number" min="0" step="10000" value="300000" inputmode="numeric"></div>
+        <div class="field"><label for="b-music">Музыка, ₸</label><input id="b-music" name="music" type="number" min="0" step="10000" value="250000" inputmode="numeric"></div>
+        <div class="field"><label for="b-photo">Фото и видео, ₸</label><input id="b-photo" name="photo" type="number" min="0" step="10000" value="250000" inputmode="numeric"></div>
+        <div class="field"><label for="b-decor">Декор, ₸</label><input id="b-decor" name="decor" type="number" min="0" step="10000" value="200000" inputmode="numeric"></div>
+        <div class="field"><label for="b-other">Другое, ₸</label><input id="b-other" name="other" type="number" min="0" step="10000" value="100000" inputmode="numeric"></div>
+      </div>
+      <div class="budget-result" aria-live="polite">
+        <p class="budget-total-label">Итого</p>
+        <p class="budget-total" data-total>—</p>
+        <p class="budget-per-guest">на гостя: <strong data-per-guest>—</strong></p>
+        <ul class="budget-breakdown" data-breakdown></ul>
+      </div>
+    </form>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="trust-title">
+  <div class="container">
+    <p class="eyebrow eyebrow-dark">Почему TOIIM</p>
+    <h2 id="trust-title">Честно и удобно</h2>
+    <ul class="benefits">
+      <li>{% icon "shield-check" 24 %}<h3>Модерация</h3><p>Каждую новую карточку проверяет администратор, прежде чем она появится в каталоге.</p></li>
+      <li>{% icon "badge-check" 24 %}<h3>Честные пометки</h3><p>Примеры помечены словом «демо». Метку «проверено» получают только реальные исполнители.</p></li>
+      <li>{% icon "languages" 24 %}<h3>Қазақша және орысша</h3><p>Названия городов и категорий на двух языках, интерфейс готов к английскому.</p></li>
+      <li>{% icon "send" 24 %}<h3>Telegram-бот</h3><p>Ищите и оставляйте заявки в @{{ TELEGRAM_BOT_USERNAME }}, когда удобнее с телефона.</p></li>
+    </ul>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="cta-title">
+  <div class="container">
+    <div class="cta">
+      <div>
+        <h2 id="cta-title">Начните планировать сегодня</h2>
+        <p>Найдите площадку и исполнителей на сайте или напишите нашему боту.</p>
+      </div>
+      <div class="cta-actions">
+        <a class="btn btn-gold btn-lg" href="{% url 'catalog:list' %}">{% icon "search" 20 %}<span>Открыть каталог</span></a>
+        <a class="btn btn-outline-light btn-lg" href="{{ TELEGRAM_BOT_URL }}" target="_blank" rel="noopener">{% icon "send" 20 %}<span>Открыть Telegram-бот</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
