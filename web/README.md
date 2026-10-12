@@ -30,4 +30,4 @@ python manage.py runserver
 
 ## Деплой
 
-Живая ссылка: _появится после первого деплоя_
+Живая ссылка: https://toiim.onrender.com
