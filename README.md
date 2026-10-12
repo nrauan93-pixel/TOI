@@ -51,5 +51,5 @@ python bot.py
 | Участник | GitHub | Роль |
 |----------|--------|------|
 | Нуркенулы Рауан | [nrauan93-pixel](https://github.com/nrauan93-pixel) | Тимлид, владелец репозитория, Telegram-бот, деплой на Railway |
-| Рыскали Диас | [dinaraimashova83-cmyk](https://github.com/dinaraimashova83-cmyk) | Разработчик сайта |
-| Мамаев Мейржан | [meirzhanmamaev](https://github.com/meirzhanmamaev) | Продукт, контент, тестирование, питч |
+| Рыскали Диас | [dinaraimashova83-cmyk](https://github.com/dinaraimashova83-cmyk) | Разработчик сайта, FullStack-developer,   |
+| Мамаев Мейржан | [meirzhanmamaev](https://github.com/meirzhanmamaev) | Продукт, контент,  питч, представление |
