@@ -1,0 +1,14 @@
+{% load ui %}{# Кнопка «в избранное». Параметры: service, style ("icon" или "full") #}
+{% if user.is_authenticated %}
+<form class="fav-form{% if style == 'icon' %} fav-form-icon{% endif %}" method="post" action="{% url 'catalog:favorite' service.slug %}">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  {% if service.pk in FAVORITE_IDS %}
+  <button type="submit" class="fav-btn is-active{% if style == 'full' %} btn btn-outline btn-block{% endif %}" aria-pressed="true" aria-label="Убрать «{{ service.title }}» из избранного">{% icon "heart" 18 "icon-heart" %}{% if style == 'full' %}<span>В избранном</span>{% endif %}</button>
+  {% else %}
+  <button type="submit" class="fav-btn{% if style == 'full' %} btn btn-outline btn-block{% endif %}" aria-pressed="false" aria-label="Добавить «{{ service.title }}» в избранное">{% icon "heart" 18 "icon-heart" %}{% if style == 'full' %}<span>В избранное</span>{% endif %}</button>
+  {% endif %}
+</form>
+{% else %}
+<a class="fav-btn{% if style == 'icon' %} fav-form-icon{% else %} btn btn-outline btn-block{% endif %}" href="{% url 'accounts:login' %}?next={{ service.get_absolute_url|urlencode }}" aria-label="Войдите, чтобы добавить в избранное">{% icon "heart" 18 "icon-heart" %}{% if style == 'full' %}<span>В избранное</span>{% endif %}</a>
+{% endif %}

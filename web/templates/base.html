@@ -1,0 +1,105 @@
+{% load static i18n ui %}<!doctype html>
+{% get_current_language as LANG %}
+<html lang="{{ LANG }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}TOIIM — тойға керектінің бәрі бір жерде{% endblock %}</title>
+  <meta name="description" content="{% block description %}TOIIM помогает организовать свадьбу, той и юбилей в Казахстане: площадки, ведущие, музыка, фото и видео в одном месте.{% endblock %}">
+  <meta name="theme-color" content="#0B1530">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon-32.png' %}">
+  <link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}">
+  <meta property="og:title" content="TOIIM">
+  <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'img/icon-512.png' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}?v={{ ASSET_VERSION }}">
+  <script>document.documentElement.classList.add("js")</script>
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <a class="skip-link" href="#main">{% translate "Перейти к содержимому" %}</a>
+
+  <header class="site-header" data-header>
+    <div class="container header-inner">
+      <a class="logo" href="{% url 'core:home' %}" aria-label="TOIIM, {% translate 'на главную' %}">
+        <img class="logo-mark" src="{% static 'img/logo-t.png' %}" alt="" width="36" height="36">
+        <span class="logo-word">TOIIM</span>
+      </a>
+
+      <nav class="main-nav" id="main-nav" aria-label="{% translate 'Главное меню' %}" data-nav>
+        {% with path=request.path kind=request.GET.kind %}
+        <a href="{% url 'catalog:list' %}" class="nav-link{% if path == '/catalog/' and not kind %} is-active{% endif %}">{% icon "layout-grid" 18 %}<span>{% translate "Каталог" %}</span></a>
+        <a href="{% url 'catalog:list' %}?kind=venue" class="nav-link{% if kind == 'venue' %} is-active{% endif %}">{% icon "building-2" 18 %}<span>{% translate "Площадки" %}</span></a>
+        <a href="{% url 'catalog:list' %}?kind=performer" class="nav-link{% if kind == 'performer' %} is-active{% endif %}">{% icon "mic" 18 %}<span>{% translate "Исполнители" %}</span></a>
+        <a href="{% url 'accounts:favorites' %}" class="nav-link{% if path == '/accounts/favorites/' %} is-active{% endif %}">{% icon "heart" 18 %}<span>{% translate "Избранное" %}</span>{% if FAVORITE_IDS %}<span class="nav-count" aria-label="{{ FAVORITE_IDS|length }} в избранном">{{ FAVORITE_IDS|length }}</span>{% endif %}</a>
+        {% if user.is_authenticated %}
+        <a href="{% url 'accounts:profile' %}" class="nav-link{% if path == '/accounts/profile/' %} is-active{% endif %}">{% icon "user" 18 %}<span>{{ user.first_name|default:user.username }}</span></a>
+        <form method="post" action="{% url 'accounts:logout' %}" class="nav-logout">{% csrf_token %}<button type="submit" class="nav-link">{% translate "Выйти" %}</button></form>
+        {% else %}
+        <a href="{% url 'accounts:login' %}" class="nav-link{% if path == '/accounts/login/' %} is-active{% endif %}">{% icon "log-in" 18 %}<span>{% translate "Войти" %}</span></a>
+        {% endif %}
+        {% endwith %}
+        <a class="btn btn-gold nav-cta" href="{{ TELEGRAM_BOT_URL }}" target="_blank" rel="noopener">
+          {% icon "send" 18 %}<span>{% translate "Открыть Telegram-бот" %}</span>
+        </a>
+      </nav>
+
+      <button class="menu-toggle" type="button" aria-controls="main-nav" aria-expanded="false" data-menu-toggle>
+        <span class="visually-hidden">{% translate "Открыть меню" %}</span>
+        {% icon "menu" 24 "icon-open" %}{% icon "x" 24 "icon-close" %}
+      </button>
+    </div>
+  </header>
+
+  {% if messages %}
+  <div class="toasts" role="status" aria-live="polite">
+    {% for message in messages %}
+    <div class="toast toast-{{ message.tags }}" data-toast>
+      {% if message.tags == "success" %}{% icon "circle-check" 20 %}{% else %}{% icon "circle-alert" 20 %}{% endif %}
+      <p>{{ message }}</p>
+      <button type="button" class="toast-close" aria-label="{% translate 'Закрыть' %}" data-toast-close>{% icon "x" 18 %}</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <main id="main">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <a class="logo" href="{% url 'core:home' %}">
+          <img class="logo-mark" src="{% static 'img/logo-t.png' %}" alt="" width="36" height="36">
+          <span class="logo-word">TOIIM</span>
+        </a>
+        <p>Тойыңызға керектінің бәрі — бір жерде. {% translate "Площадки, ведущие, музыка, фото и видео для праздников в Казахстане." %}</p>
+      </div>
+      <div>
+        <h2 class="footer-title">{% translate "Каталог" %}</h2>
+        <ul class="footer-links">
+          <li><a href="{% url 'catalog:list' %}?kind=venue">{% translate "Площадки" %}</a></li>
+          <li><a href="{% url 'catalog:list' %}?kind=performer">{% translate "Исполнители" %}</a></li>
+          <li><a href="{% url 'catalog:list' %}?kind=service">{% translate "Декор и торты" %}</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="footer-title">TOIIM</h2>
+        <ul class="footer-links">
+          <li><a href="{% url 'core:home' %}#how">{% translate "Как это работает" %}</a></li>
+          <li><a href="{% url 'core:home' %}#budget">{% translate "Калькулятор бюджета" %}</a></li>
+          <li><a href="{% url 'accounts:signup' %}">{% translate "Регистрация" %}</a></li>
+          <li><a href="{{ TELEGRAM_BOT_URL }}" target="_blank" rel="noopener">Telegram: @{{ TELEGRAM_BOT_USERNAME }}</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="container footer-bottom">
+      <p>© {% now "Y" %} TOIIM. {% translate "Студенческий проект. Карточки с пометкой «демо» — примеры, а не настоящие компании." %}</p>
+    </div>
+  </footer>
+
+  <script src="{% static 'js/main.js' %}?v={{ ASSET_VERSION }}" defer></script>
+</body>
+</html>

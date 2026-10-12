@@ -1,0 +1,38 @@
+# Описание сервиса для Render (Blueprint).
+# Render читает этот файл и сам создаёт веб-сервис.
+services:
+  - type: web
+    name: toiim
+    runtime: python
+    plan: free
+    region: frankfurt
+    rootDir: web
+    buildCommand: bash build.sh
+    startCommand: gunicorn config.wsgi:application
+    healthCheckPath: /api/health/
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.7
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: WEB_CONCURRENCY
+        value: "2"
+      # Значения ниже вы вводите сами в панели Render (они секретные):
+      - key: DATABASE_URL
+        sync: false
+      - key: DJANGO_SUPERUSER_USERNAME
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false
+      - key: TELEGRAM_BOT_USERNAME
+        value: toi3_bot
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_ADMIN_CHAT_ID
+        sync: false
+      - key: BOT_API_KEY
+        sync: false

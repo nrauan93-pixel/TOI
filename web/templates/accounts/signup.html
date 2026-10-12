@@ -1,0 +1,14 @@
+{% extends "accounts/auth_base.html" %}
+{% load ui %}
+{% block title %}Регистрация — TOIIM{% endblock %}
+{% block auth %}
+<h1>Регистрация</h1>
+<p class="auth-sub">Клиенты сохраняют избранное и оставляют отзывы. Исполнители и площадки добавляют свои услуги.</p>
+<form method="post" novalidate data-once>
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ next }}">
+  {% include "partials/form_fields.html" %}
+  <button class="btn btn-gold btn-lg btn-block" type="submit" data-loading-text="Создаём аккаунт…">{% icon "user" 18 %}<span>Создать аккаунт</span></button>
+</form>
+<p class="auth-switch">Уже есть аккаунт? <a href="{% url 'accounts:login' %}">Войти</a></p>
+{% endblock %}

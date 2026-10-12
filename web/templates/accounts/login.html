@@ -1,0 +1,16 @@
+{% extends "accounts/auth_base.html" %}
+{% load ui %}
+{% block title %}Вход — TOIIM{% endblock %}
+{% block auth %}
+<h1>Вход в TOIIM</h1>
+<p class="auth-sub">Избранное, отзывы и ваши заявки в одном месте.</p>
+<form method="post" novalidate data-once>
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ next }}">
+  {% if form.non_field_errors %}<p class="form-error" role="alert">{% icon "circle-alert" 16 %}Неверный логин или пароль.</p>{% endif %}
+  <div class="field"><label for="id_username">Логин</label><input type="text" name="username" id="id_username" autocomplete="username" required autofocus value="{{ form.username.value|default:'' }}"></div>
+  <div class="field"><label for="id_password">Пароль</label><input type="password" name="password" id="id_password" autocomplete="current-password" required></div>
+  <button class="btn btn-gold btn-lg btn-block" type="submit" data-loading-text="Входим…">{% icon "log-in" 18 %}<span>Войти</span></button>
+</form>
+<p class="auth-switch">Нет аккаунта? <a href="{% url 'accounts:signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Зарегистрируйтесь</a></p>
+{% endblock %}

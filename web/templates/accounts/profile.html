@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Профиль — TOIIM{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <h1>Здравствуйте, {{ user.first_name|default:user.username }}</h1>
+    <p class="page-sub">{{ user.profile.get_role_display }} · в избранном {{ favorites_count|ru_plural:"услуга,услуги,услуг" }}</p>
+  </div>
+</section>
+<section class="section section-tight">
+  <div class="container profile-layout">
+    <form class="panel" method="post" novalidate data-once>
+      {% csrf_token %}
+      <h2 class="panel-title">Мои данные</h2>
+      {% include "partials/form_fields.html" %}
+      <button class="btn btn-navy btn-block" type="submit" data-loading-text="Сохраняем…">{% icon "check" 18 %}<span>Сохранить</span></button>
+    </form>
+
+    <div class="profile-main">
+      <div class="panel">
+        <h2 class="panel-title">Мои заявки</h2>
+        {% if requests %}
+        <ul class="list">
+          {% for item in requests %}
+          <li class="list-row">
+            <div><a href="{{ item.service.get_absolute_url }}">{{ item.service.title }}</a>
+              <p class="muted">{% if item.event_date %}{{ item.event_date|date:"d.m.Y" }} · {% endif %}{% if item.guests %}{{ item.guests }} гостей · {% endif %}отправлена {{ item.created_at|date:"d.m.Y H:i" }}</p></div>
+            <span class="status status-{{ item.status }}">{{ item.get_status_display }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div class="empty-mini">{% icon "message-circle" 22 %}<p>Заявок пока нет. Найдите площадку в <a href="{% url 'catalog:list' %}">каталоге</a> и нажмите «Отправить заявку».</p></div>
+        {% endif %}
+      </div>
+
+      <div class="panel">
+        <h2 class="panel-title">Мои отзывы</h2>
+        {% if reviews %}
+        <ul class="list">
+          {% for review in reviews %}
+          <li class="list-row">
+            <div><a href="{{ review.service.get_absolute_url }}#reviews">{{ review.service.title }}</a><p class="muted">{{ review.text|truncatechars:90 }}</p></div>
+            <span class="rating">{% icon "star" 16 "icon-star" %}{{ review.rating }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div class="empty-mini">{% icon "star" 22 %}<p>Вы ещё не оставляли отзывов.</p></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

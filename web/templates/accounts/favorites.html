@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Избранное — TOIIM{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <h1>Избранное</h1>
+    <p class="page-sub">{{ services|length|ru_plural:"услуга,услуги,услуг" }}. Список хранится в вашем аккаунте.</p>
+  </div>
+</section>
+<section class="section section-tight">
+  <div class="container">
+    {% if services %}
+    <div class="card-grid">{% for service in services %}{% include "partials/service_card.html" %}{% endfor %}</div>
+    {% else %}
+    <div class="empty-state">
+      <span class="empty-icon">{% icon "heart" 32 %}</span>
+      <h2>Здесь пока пусто</h2>
+      <p>Нажмите на сердечко на карточке площадки или исполнителя, и она появится здесь.</p>
+      <a class="btn btn-navy" href="{% url 'catalog:list' %}">{% icon "search" 18 %}<span>Открыть каталог</span></a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

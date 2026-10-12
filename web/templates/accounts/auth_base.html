@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<section class="auth">
+  <div class="auth-card">
+    <img class="auth-logo" src="{% static 'img/logo-t.png' %}" alt="" width="56" height="56">
+    {% block auth %}{% endblock %}
+  </div>
+</section>
+{% endblock %}
