@@ -1,4 +1,4 @@
-# \# Toi Bot 🎉# TOIIM 🎉
+#TOIIM
 
 Платформа для организации тоя: свадьбы, кыз узату, юбилея. Залы, тамады, музыка, фото и декор с ценами, отзывами и подбором по бюджету в одном месте.
 
@@ -50,6 +50,6 @@ python bot.py
 
 | Участник | GitHub | Роль |
 |----------|--------|------|
-| Нуркенулы Рауан | [nrauan93-pixel](https://github.com/nrauan93-pixel) | Тимлид, владелец репозитория, Telegram-бот, деплой на Railway |
+| Нуркенулы Рауан | [nrauan93-pixel / Rauanof2007 ](https://github.com/nrauan93-pixel) | Тимлид, владелец репозитория, Telegram-бот, деплой на Railway |
 | Рыскали Диас | [dinaraimashova83-cmyk](https://github.com/dinaraimashova83-cmyk) | Разработчик сайта, FullStack-developer,   |
 | Мамаев Мейржан | [meirzhanmamaev](https://github.com/meirzhanmamaev) | Продукт, контент,  питч, представление |
