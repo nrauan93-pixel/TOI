@@ -37,6 +37,7 @@ if not SECRET_KEY:
 
 ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "localhost,127.0.0.1")
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
+CSRF_FAILURE_VIEW = "core.views.csrf_failure"
 
 # Render сам сообщает адрес сайта — добавляем его автоматически.
 RENDER_HOST = os.environ.get("RENDER_EXTERNAL_HOSTNAME")

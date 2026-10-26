@@ -38,3 +38,14 @@ class EnsureSuperuserTests(TestCase):
         env = {"DJANGO_SUPERUSER_USERNAME": "boss", "DJANGO_SUPERUSER_PASSWORD": "qwerty"}
         with mock.patch.dict("os.environ", env), self.assertRaises(CommandError):
             call_command("ensure_superuser", verbosity=0)
+
+
+class CsrfFailurePageTests(TestCase):
+    def test_csrf_failure_shows_friendly_page(self):
+        from django.test import Client
+
+        client = Client(enforce_csrf_checks=True)
+        response = client.post(reverse("accounts:signup"), {"username": "x"})
+        self.assertEqual(response.status_code, 403)
+        self.assertContains(response, "Форма устарела", status_code=403)
+        self.assertContains(response, "Открыть в браузере", status_code=403)

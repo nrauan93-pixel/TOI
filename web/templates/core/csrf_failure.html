@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Обновите страницу — TOIIM{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="empty-state">
+      {% icon "rotate-ccw" 40 %}
+      <h2>Форма устарела, обновите страницу</h2>
+      <p class="muted">Так бывает, если страницу открыли давно или открыли во встроенном браузере Instagram или TikTok.
+        Нажмите «Попробовать снова». Если ошибка повторится, откройте сайт в Safari или Chrome: «⋯» → «Открыть в браузере».</p>
+      <a class="btn btn-navy" href="{{ retry_url }}">{% icon "rotate-ccw" 18 %}<span>Попробовать снова</span></a>
+    </div>
+  </div>
+</section>
+{% endblock %}

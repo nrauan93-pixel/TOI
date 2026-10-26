@@ -36,3 +36,12 @@ def health(request):
     with connection.cursor() as cursor:
         cursor.execute("SELECT 1")
     return Response({"status": "ok", "database": connection.vendor})
+
+
+def csrf_failure(request, reason=""):
+    """Понятная страница вместо стандартной «Ошибка проверки CSRF».
+
+    Чаще всего так бывает во встроенном браузере Instagram или TikTok, когда он не сохранил cookie,
+    или если форма была открыта слишком давно.
+    """
+    return render(request, "core/csrf_failure.html", {"retry_url": request.path}, status=403)

@@ -62,6 +62,128 @@
     }).observe(requestBlock);
   }
 
+  // Свои выпадающие списки вместо системных. Настоящий <select> остаётся в форме и отправляется как обычно.
+  var openSelect = null;
+  var closeOpenSelect = function () { if (openSelect) openSelect(false); };
+  document.addEventListener("click", function (event) {
+    if (openSelect && !event.target.closest(".cselect.is-open")) closeOpenSelect();
+  });
+
+  document.querySelectorAll("select:not([multiple]):not([disabled])").forEach(function (native, index) {
+    var wrap = document.createElement("div");
+    wrap.className = "cselect";
+    native.parentNode.insertBefore(wrap, native);
+    wrap.appendChild(native);
+    native.classList.add("cselect-native");
+    native.tabIndex = -1;
+    native.setAttribute("aria-hidden", "true");
+
+    var id = native.id || "cselect-" + index;
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "cselect-btn";
+    button.id = id + "-btn";
+    button.setAttribute("aria-haspopup", "listbox");
+    button.setAttribute("aria-expanded", "false");
+    button.innerHTML = "<span class=\"cselect-value\"></span><svg class=\"cselect-chev\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\"/></svg>";
+    var label = native.id && document.querySelector("label[for=\"" + native.id + "\"]");
+    if (label) {
+      label.htmlFor = button.id;
+      if (!label.id) label.id = id + "-label";
+      button.setAttribute("aria-labelledby", label.id + " " + button.id);
+    }
+
+    var list = document.createElement("ul");
+    list.className = "cselect-list";
+    list.id = id + "-list";
+    list.setAttribute("role", "listbox");
+    if (label) list.setAttribute("aria-labelledby", label.id);
+    button.setAttribute("aria-controls", list.id);
+    wrap.appendChild(button);
+    wrap.appendChild(list);
+
+    var items = Array.prototype.map.call(native.options, function (option, i) {
+      var li = document.createElement("li");
+      li.className = "cselect-option";
+      li.id = id + "-opt-" + i;
+      li.setAttribute("role", "option");
+      li.textContent = option.textContent;
+      li.addEventListener("click", function () { choose(i); });
+      li.addEventListener("mousemove", function () { setActive(i); });
+      list.appendChild(li);
+      return li;
+    });
+
+    var active = -1;
+    var setActive = function (i) {
+      if (i < 0 || i >= items.length) return;
+      if (items[active]) items[active].classList.remove("is-active");
+      active = i;
+      items[i].classList.add("is-active");
+      button.setAttribute("aria-activedescendant", items[i].id);
+      var top = items[i].offsetTop, bottom = top + items[i].offsetHeight;
+      if (top < list.scrollTop) list.scrollTop = top;
+      else if (bottom > list.scrollTop + list.clientHeight) list.scrollTop = bottom - list.clientHeight;
+    };
+    var sync = function () {
+      var i = native.selectedIndex;
+      button.querySelector(".cselect-value").textContent = i >= 0 ? native.options[i].textContent : "";
+      items.forEach(function (li, n) { li.setAttribute("aria-selected", String(n === i)); });
+    };
+    var setOpen = function (open) {
+      if (open) {
+        closeOpenSelect();
+        var room = window.innerHeight - button.getBoundingClientRect().bottom;
+        wrap.classList.toggle("is-up", room < 260 && button.getBoundingClientRect().top > room);
+        openSelect = setOpen;
+        setActive(Math.max(native.selectedIndex, 0));
+      } else if (openSelect === setOpen) {
+        openSelect = null;
+      }
+      wrap.classList.toggle("is-open", open);
+      button.setAttribute("aria-expanded", String(open));
+    };
+    var choose = function (i) {
+      var changed = native.selectedIndex !== i;
+      native.selectedIndex = i;
+      sync();
+      setOpen(false);
+      button.focus();
+      if (changed) native.dispatchEvent(new Event("change", { bubbles: true }));
+    };
+
+    button.addEventListener("click", function () { setOpen(!wrap.classList.contains("is-open")); });
+    // Фокус всегда остаётся на кнопке, стрелки двигают подсветку в списке.
+    var typed = "", typedTimer;
+    button.addEventListener("keydown", function (event) {
+      var key = event.key;
+      var open = wrap.classList.contains("is-open");
+      if (!open) {
+        if (["ArrowDown", "ArrowUp", "Enter", " "].indexOf(key) !== -1) { event.preventDefault(); setOpen(true); }
+        return;
+      }
+      if (key === "ArrowDown") setActive(active + 1);
+      else if (key === "ArrowUp") setActive(active - 1);
+      else if (key === "Home") setActive(0);
+      else if (key === "End") setActive(items.length - 1);
+      else if (key === "Enter" || key === " ") choose(active);
+      else if (key === "Escape") setOpen(false);
+      else if (key === "Tab") { setOpen(false); return; }
+      else if (key.length === 1) {
+        // Быстрый переход по первым буквам: «а» → «Алматы».
+        clearTimeout(typedTimer);
+        typed += key.toLowerCase();
+        typedTimer = setTimeout(function () { typed = ""; }, 600);
+        var found = items.findIndex(function (li) { return li.textContent.toLowerCase().indexOf(typed) === 0; });
+        if (found !== -1) setActive(found);
+      } else return;
+      event.preventDefault();
+    });
+    native.addEventListener("change", sync);
+    if (native.form) native.form.addEventListener("reset", function () { setTimeout(sync); });
+    sync();
+  });
+
   // Калькулятор бюджета: считает сразу при вводе.
   var budget = document.querySelector("[data-budget]");
   if (budget) {
