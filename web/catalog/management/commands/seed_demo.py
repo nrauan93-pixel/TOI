@@ -3,15 +3,16 @@
 
 Запуск:  python manage.py seed_demo
 Повторный запуск безопасен: записи обновляются, а не дублируются.
-Все услуги помечены is_demo=True и «(демо)» в названии: это примеры,
-а не настоящие компании.
+Все услуги помечены is_demo=True: это примеры, а не настоящие компании.
+На сайте об этом говорит одна плашка на странице услуги и строка в подвале.
+Фото берутся с Unsplash (бесплатная лицензия, можно использовать без оплаты).
 """
 
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from catalog.models import Category, City, Review, Service
+from catalog.models import Category, City, Review, Service, ServiceImage
 
 CITIES = [
     ("almaty", "Алматы", "Алматы"),
@@ -62,6 +63,35 @@ SERVICES = [
     ("taraz-aulie-taraz", "toikhana", "taraz", "Тойхана «Әулие-Ата»", "Доступные цены и просторный зал", 8000, "guest", 100, 500, [4, 4]),
 ]
 
+# Фото с Unsplash (https://unsplash.com/license): slug услуги -> (id фото, описание).
+PHOTOS = {
+    "altyn-saray-almaty": ("photo-1712314947761-a8d718bd8c32", "банкетный зал с люстрами"),
+    "ak-orda-hall-almaty": ("photo-1763429338698-439aa108e7fb", "светлый зал, накрытый для банкета"),
+    "baiterek-palace-astana": ("photo-1783314867628-220ab03cac99", "большой зал с множеством столов"),
+    "shymkent-grand-shymkent": ("photo-1768851142332-75f3d1b47452", "банкетный зал с круглыми столами"),
+    "sary-arka-karaganda": ("photo-1768508951405-10e83c4a2872", "зал с круглыми столами"),
+    "aktobe-saltanat-aktobe": ("photo-1665607437981-973dcd6a22bb", "зал, накрытый для свадьбы"),
+    "taraz-aulie-taraz": ("photo-1723832348105-2e69f948135a", "просторный зал со столами"),
+    "dala-restaurant-almaty": ("photo-1779301674216-506de8607c87", "ресторан с большими окнами"),
+    "esil-hall-astana": ("photo-1631615535272-1106aa1b3854", "ресторан с подвесными лампами"),
+    "kazyna-restaurant-shymkent": ("photo-1687648431656-da99da578d50", "уютный зал с белыми скатертями"),
+    "atyrau-zhaiyk-atyrau": ("photo-1695094411862-0e047fbddcb1", "зал ресторана со столами"),
+    "nurlan-host-almaty": ("photo-1772030828446-9e8531d25e7b", "микрофон"),
+    "aigerim-host-astana": ("photo-1527529482837-4698179dc6ce", "гости поднимают бокалы"),
+    "erlan-host-shymkent": ("photo-1758810409996-583f3bad7d51", "гости танцуют на празднике"),
+    "asyl-host-atyrau": ("photo-1502635385003-ee1e6a1a742d", "бокалы на праздничном столе"),
+    "aru-sound-almaty": ("photo-1581663838011-fdc391797402", "музыканты на сцене"),
+    "saule-band-shymkent": ("photo-1560523159-4a9692d222ef", "выступление на сцене"),
+    "dj-arman-astana": ("photo-1544785349-c4a5301826fd", "DJ-пульт с подсветкой"),
+    "sapa-studio-almaty": ("photo-1519741497674-611481863552", "свадебная фотосессия"),
+    "kadr-media-astana": ("photo-1769635177236-116c95222fab", "фотограф снимает пару"),
+    "moment-photo-karaganda": ("photo-1622277430358-f4d134452e2e", "невеста у окна"),
+    "gulder-decor-almaty": ("photo-1641834919507-b0271fe5186b", "арка из цветов"),
+    "dina-decor-aktobe": ("photo-1738025277281-582526f674c4", "арка с розовыми и белыми цветами"),
+    "tatti-cake-astana": ("photo-1525257831700-183b9b8bf5c4", "свадебный торт с цветами"),
+}
+PHOTO_URL = "https://images.unsplash.com/{}?auto=format&fit=crop&w=1200&q=80"
+
 DEMO_REVIEW_TEXTS = {
     5: "Всё прошло отлично, гости довольны. Рекомендуем!",
     4: "Хорошо, но были небольшие задержки. В целом довольны.",
@@ -95,12 +125,9 @@ class Command(BaseCommand):
                 defaults={
                     "category": categories[cat],
                     "city": cities[city],
-                    "title": f"{title} (демо)",
+                    "title": title,
                     "short_description": short,
-                    "description": (
-                        f"{short}.\n\nЭто демонстрационная карточка TOIIM: компания вымышленная, "
-                        "цены примерные. Настоящие исполнители появятся после регистрации и модерации."
-                    ),
+                    "description": f"{short}.",
                     "price_from": price,
                     "price_unit": unit,
                     "capacity_min": cap_min,
@@ -112,6 +139,12 @@ class Command(BaseCommand):
                 },
             )
             created_count += created
+            if slug in PHOTOS:
+                photo_id, alt = PHOTOS[slug]
+                ServiceImage.objects.update_or_create(
+                    service=service, order=0, image="",
+                    defaults={"image_url": PHOTO_URL.format(photo_id), "alt": f"Фото для примера: {alt}"},
+                )
             for reviewer, rating in zip(reviewers, ratings):
                 Review.objects.update_or_create(
                     service=service, user=reviewer,

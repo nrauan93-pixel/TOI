@@ -35,7 +35,6 @@
           <span class="tag">{% icon service.category.icon 14 %}{{ service.category.name }}</span>
           <span class="tag">{% icon "map-pin" 14 %}{{ service.city.name }}</span>
           {% if service.is_verified %}<span class="tag tag-verified">{% icon "badge-check" 14 %}Проверено TOIIM</span>{% endif %}
-          {% if service.is_demo %}<span class="tag tag-demo">{% icon "info" 14 %}Демо-карточка</span>{% endif %}
         </div>
         <h1>{{ service.title }}</h1>
         <p class="lead-dark">{{ service.short_description }}</p>
@@ -45,7 +44,7 @@
       </div>
 
       {% if service.is_demo %}
-      <div class="notice">{% icon "info" 20 %}<p>Это пример для демонстрации TOIIM: компания вымышленная, цены примерные. Заявка сохранится в базе, но реальный исполнитель её не получит.</p></div>
+      <div class="notice">{% icon "info" 20 %}<p>Учебный проект TOIIM: карточка для примера, цены примерные, фото с Unsplash. Заявка придёт команде TOIIM, а не в заведение.</p></div>
       {% endif %}
 
       <dl class="facts">

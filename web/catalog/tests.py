@@ -4,7 +4,7 @@ from django.db import IntegrityError, transaction
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from .models import BookingRequest, Category, City, Favorite, Review, Service
+from .models import BookingRequest, Category, City, Favorite, Review, Service, ServiceImage
 
 User = get_user_model()
 
@@ -61,7 +61,9 @@ class SeedDemoTests(TestCase):
         self.assertGreaterEqual(City.objects.count(), 3)
         self.assertFalse(Service.objects.filter(is_demo=False).exists())
         self.assertFalse(Service.objects.filter(is_verified=True).exists())
-        self.assertTrue(all("(демо)" in title for title in Service.objects.values_list("title", flat=True)))
+        self.assertFalse(any("(демо)" in title for title in Service.objects.values_list("title", flat=True)))
+        self.assertFalse(Service.objects.filter(images__isnull=True).exists())
+        self.assertEqual(ServiceImage.objects.count(), Service.objects.count())
 
 
 class CatalogApiTests(TestCase):
@@ -130,7 +132,7 @@ class CatalogPageTests(TestCase):
     def test_detail_page(self):
         response = self.client.get(self.service.get_absolute_url())
         self.assertContains(response, self.service.title)
-        self.assertContains(response, "Демо-карточка")
+        self.assertContains(response, "Учебный проект TOIIM")
         self.assertContains(response, f"https://t.me/toi3_bot?start=service_{self.service.pk}")
 
     def test_unpublished_detail_is_404(self):
