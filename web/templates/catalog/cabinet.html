@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Кабинет исполнителя — TOIIM{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div class="container cabinet-head">
+    <div>
+      <h1>Кабинет исполнителя</h1>
+      <p class="page-sub">Ваши услуги в каталоге и заявки от клиентов</p>
+    </div>
+    <a class="btn btn-gold" href="{% url 'catalog:service-create' %}">{% icon "sparkles" 18 %}<span>Добавить услугу</span></a>
+  </div>
+</section>
+<section class="section section-tight">
+  <div class="container profile-main">
+    {% if not user.profile.telegram_chat_id %}
+    <div class="panel cabinet-note">
+      {% icon "send" 22 %}
+      <p>Подключите Telegram, чтобы заявки приходили вам сразу, а не только сюда. Это делается в <a href="{% url 'accounts:profile' %}">профиле</a>, поле «Мой Telegram ID».</p>
+    </div>
+    {% endif %}
+
+    <div class="panel">
+      <h2 class="panel-title">Мои услуги</h2>
+      {% if services %}
+      <ul class="list">
+        {% for service in services %}
+        <li class="list-row">
+          <div>
+            {% if service.status == "published" %}<a href="{{ service.get_absolute_url }}">{{ service.title }}</a>{% else %}<strong>{{ service.title }}</strong>{% endif %}
+            <p class="muted">{{ service.category.name }} · {{ service.city.name }} · от {{ service.price_from|tenge }}{% if service.new_requests %} · новых заявок: {{ service.new_requests }}{% endif %}</p>
+            {% if service.status == "pending" %}<p class="muted">Проверяем карточку. Клиенты увидят её после проверки.</p>{% endif %}
+            {% if service.status == "rejected" %}<p class="muted">Карточку не опубликовали. Исправьте её и сохраните ещё раз.</p>{% endif %}
+          </div>
+          <div class="row-actions">
+            <span class="status status-{{ service.status }}">{{ service.get_status_display }}</span>
+            <a class="btn btn-outline btn-sm" href="{% url 'catalog:service-edit' service.pk %}">Изменить</a>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="empty-mini">{% icon "handshake" 22 %}<p>У вас пока нет услуг. <a href="{% url 'catalog:service-create' %}">Добавьте первую</a>: зал, тамаду, музыку, фото или что-то ещё для тоя.</p></div>
+      {% endif %}
+    </div>
+
+    <div class="panel">
+      <h2 class="panel-title">Заявки ко мне</h2>
+      {% if requests %}
+      <ul class="list">
+        {% for item in requests %}
+        <li class="list-row">
+          <div>
+            <strong>{{ item.name }}</strong> · <a href="tel:{{ item.phone }}">{{ item.phone }}</a>
+            <p class="muted">{{ item.service.title }}{% if item.event_date %} · {{ item.event_date|date:"d.m.Y" }}{% endif %}{% if item.guests %} · {{ item.guests }} гостей{% endif %} · пришла {{ item.created_at|date:"d.m.Y H:i" }}</p>
+            {% if item.message %}<p class="muted">«{{ item.message|truncatechars:160 }}»</p>{% endif %}
+          </div>
+          {% if item.status == "cancelled" %}
+          <span class="status status-cancelled">{{ item.get_status_display }}</span>
+          {% else %}
+          <form class="status-form" method="post" action="{% url 'catalog:request-status' item.pk %}">
+            {% csrf_token %}
+            <label class="visually-hidden" for="status-{{ item.pk }}">Статус заявки</label>
+            <select id="status-{{ item.pk }}" name="status">
+              {% for value, label in provider_statuses %}<option value="{{ value }}"{% if item.status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select>
+            <button class="btn btn-navy btn-sm" type="submit">{% icon "check" 16 %}<span class="visually-hidden">Сохранить статус</span></button>
+          </form>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="empty-mini">{% icon "message-circle" 22 %}<p>Заявок пока нет. Они появятся здесь, когда клиент нажмёт «Отправить заявку» на странице вашей услуги.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

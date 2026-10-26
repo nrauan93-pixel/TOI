@@ -1,4 +1,5 @@
 from django import forms
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 
@@ -54,6 +55,16 @@ class ProfileForm(forms.ModelForm):
     email = forms.EmailField(label="Почта")
     phone = forms.CharField(label="Телефон", max_length=30, required=False, validators=[validate_phone])
     city = forms.ModelChoiceField(label="Город", queryset=City.objects.all(), required=False, empty_label="Не выбран")
+    telegram_chat_id = forms.IntegerField(
+        label="Мой Telegram ID", required=False,
+        help_text=(
+            "Сюда будут приходить заявки клиентов. 1) Откройте "
+            f'<a href="https://t.me/{settings.TELEGRAM_BOT_USERNAME}" target="_blank" rel="noopener">нашего бота</a> '
+            "и нажмите Start. 2) Напишите боту "
+            '<a href="https://t.me/userinfobot" target="_blank" rel="noopener">@userinfobot</a>, '
+            "он пришлёт ваш ID (число). 3) Вставьте число сюда."
+        ),
+    )
 
     class Meta:
         model = User
@@ -64,6 +75,16 @@ class ProfileForm(forms.ModelForm):
         profile = self.instance.profile
         self.fields["phone"].initial = profile.phone
         self.fields["city"].initial = profile.city
+        if profile.is_provider:
+            self.fields["telegram_chat_id"].initial = profile.telegram_chat_id
+        else:
+            del self.fields["telegram_chat_id"]
+
+    def clean_telegram_chat_id(self):
+        chat_id = self.cleaned_data.get("telegram_chat_id")
+        if chat_id and Profile.objects.filter(telegram_chat_id=chat_id).exclude(user=self.instance).exists():
+            raise forms.ValidationError("Этот Telegram ID уже привязан к другому аккаунту.")
+        return chat_id
 
     def clean_email(self):
         email = self.cleaned_data["email"].lower()
@@ -76,6 +97,8 @@ class ProfileForm(forms.ModelForm):
         profile = user.profile
         profile.phone = self.cleaned_data.get("phone", "")
         profile.city = self.cleaned_data.get("city")
+        if "telegram_chat_id" in self.fields:
+            profile.telegram_chat_id = self.cleaned_data.get("telegram_chat_id")
         if commit:
             profile.save()
         return user

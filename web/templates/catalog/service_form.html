@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}{% if service %}Изменить услугу{% else %}Новая услуга{% endif %} — TOIIM{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <a class="muted" href="{% url 'catalog:cabinet' %}">← Кабинет</a>
+    <h1>{% if service %}Изменить услугу{% else %}Новая услуга{% endif %}</h1>
+    <p class="page-sub">После сохранения мы проверим карточку, и она появится в каталоге.</p>
+  </div>
+</section>
+<section class="section section-tight">
+  <div class="container">
+    <form class="panel cabinet-form" method="post" novalidate data-once>
+      {% csrf_token %}
+      {% include "partials/form_fields.html" %}
+      <button class="btn btn-navy btn-block" type="submit" data-loading-text="Сохраняем…">{% icon "check" 18 %}<span>Сохранить и отправить на проверку</span></button>
+    </form>
+  </div>
+</section>
+{% endblock %}

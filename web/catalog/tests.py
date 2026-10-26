@@ -347,3 +347,133 @@ class TelegramIntegrationTests(TestCase):
             with self.assertLogs("catalog.telegram", level="WARNING") as logs:
                 self.assertFalse(send_message("1001", "привет"))
         self.assertNotIn("test-token", " ".join(logs.output))
+
+
+class ProviderCabinetTests(TestCase):
+    """Кабинет исполнителя: свои услуги, заявки к ним и доступ только к своему."""
+
+    def setUp(self):
+        self.city = City.objects.create(name_ru="Алматы", slug="almaty")
+        self.category = Category.objects.create(name_ru="Ведущие", slug="host", kind="performer")
+        self.provider = User.objects.create_user("erlan", password="pass12345!")
+        self.provider.profile.role = "provider"
+        self.provider.profile.save()
+        self.other = User.objects.create_user("other", password="pass12345!")
+        self.other.profile.role = "provider"
+        self.other.profile.save()
+
+    def _data(self, **overrides):
+        data = {
+            "category": self.category.pk, "city": self.city.pk, "title": "Тамада Ерлан", "short_description": "Весело",
+            "price_from": 150000, "price_unit": "event", "photo_url": "https://example.com/erlan.jpg",
+        }
+        data.update(overrides)
+        return data
+
+    def test_client_is_sent_to_profile(self):
+        client_user = User.objects.create_user("aliya", password="pass12345!")
+        self.client.force_login(client_user)
+        self.assertRedirects(self.client.get(reverse("catalog:cabinet")), reverse("accounts:profile"))
+
+    def test_client_can_turn_on_cabinet(self):
+        client_user = User.objects.create_user("aliya", password="pass12345!")
+        self.client.force_login(client_user)
+        response = self.client.post(reverse("accounts:become-provider"))
+        self.assertRedirects(response, reverse("catalog:cabinet"))
+        client_user.profile.refresh_from_db()
+        self.assertTrue(client_user.profile.is_provider)
+
+    def test_create_service_goes_to_moderation(self):
+        self.client.force_login(self.provider)
+        response = self.client.post(reverse("catalog:service-create"), self._data())
+        self.assertRedirects(response, reverse("catalog:cabinet"))
+        service = Service.objects.get()
+        self.assertEqual(service.owner, self.provider)
+        self.assertEqual(service.status, Service.Status.PENDING)
+        self.assertFalse(service.is_demo)
+        self.assertTrue(service.slug.startswith("tamada-erlan-"))
+        self.assertEqual(service.images.get().image_url, "https://example.com/erlan.jpg")
+        # До проверки клиенты карточку не видят.
+        self.assertEqual(self.client.get(service.get_absolute_url()).status_code, 404)
+
+    def test_edit_sends_back_to_moderation(self):
+        self.client.force_login(self.provider)
+        self.client.post(reverse("catalog:service-create"), self._data())
+        service = Service.objects.get()
+        Service.objects.filter(pk=service.pk).update(status=Service.Status.PUBLISHED)
+        self.client.post(reverse("catalog:service-edit", args=[service.pk]), self._data(price_from=200000, photo_url=""))
+        service.refresh_from_db()
+        self.assertEqual(service.price_from, 200000)
+        self.assertEqual(service.status, Service.Status.PENDING)
+        self.assertFalse(service.images.exists())
+
+    def test_cannot_edit_someone_elses_service(self):
+        service = Service.objects.create(
+            owner=self.other, category=self.category, city=self.city, title="Чужая", slug="chuzhaya",
+            short_description="x", price_from=1, status=Service.Status.PUBLISHED,
+        )
+        self.client.force_login(self.provider)
+        self.assertEqual(self.client.get(reverse("catalog:service-edit", args=[service.pk])).status_code, 404)
+        response = self.client.post(reverse("catalog:service-edit", args=[service.pk]), self._data())
+        self.assertEqual(response.status_code, 404)
+        service.refresh_from_db()
+        self.assertEqual(service.title, "Чужая")
+
+    def test_capacity_range_validated(self):
+        self.client.force_login(self.provider)
+        response = self.client.post(reverse("catalog:service-create"), self._data(capacity_min=300, capacity_max=100))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "не меньше")
+        self.assertFalse(Service.objects.exists())
+
+    def test_requests_listed_and_status_changed_only_for_own(self):
+        mine = Service.objects.create(
+            owner=self.provider, category=self.category, city=self.city, title="Моя", slug="moya",
+            short_description="x", price_from=1, status=Service.Status.PUBLISHED,
+        )
+        theirs = Service.objects.create(
+            owner=self.other, category=self.category, city=self.city, title="Чужая", slug="chuzhaya",
+            short_description="x", price_from=1, status=Service.Status.PUBLISHED,
+        )
+        my_request = BookingRequest.objects.create(service=mine, name="Алия", phone="+77001112233")
+        their_request = BookingRequest.objects.create(service=theirs, name="Секрет", phone="+77009998877")
+        self.client.force_login(self.provider)
+
+        response = self.client.get(reverse("catalog:cabinet"))
+        self.assertContains(response, "Алия")
+        self.assertNotContains(response, "Секрет")
+
+        self.client.post(reverse("catalog:request-status", args=[my_request.pk]), {"status": "confirmed"})
+        my_request.refresh_from_db()
+        self.assertEqual(my_request.status, "confirmed")
+
+        response = self.client.post(reverse("catalog:request-status", args=[their_request.pk]), {"status": "declined"})
+        self.assertEqual(response.status_code, 404)
+        self.client.post(reverse("catalog:request-status", args=[my_request.pk]), {"status": "cancelled"})
+        my_request.refresh_from_db()
+        self.assertEqual(my_request.status, "confirmed")
+
+    @override_settings(TELEGRAM_BOT_TOKEN="test-token", TELEGRAM_ADMIN_CHAT_ID="1001")
+    def test_admin_told_about_new_service_and_owner_told_when_published(self):
+        from unittest import mock
+
+        from django.contrib.admin.sites import site
+
+        from .admin import ServiceAdmin
+
+        self.provider.profile.telegram_chat_id = 777
+        self.provider.profile.save()
+        self.client.force_login(self.provider)
+        with mock.patch("catalog.telegram.send_message", return_value=True) as send:
+            self.client.post(reverse("catalog:service-create"), self._data())
+        self.assertEqual(send.call_args.args[0], "1001")
+        self.assertIn("Тамада Ерлан", send.call_args.args[1])
+
+        admin_user = User.objects.create_superuser("boss", password="pass12345!")
+        request = mock.Mock(user=admin_user)
+        request.build_absolute_uri.return_value = "https://toiim.example/"
+        with mock.patch("catalog.telegram.send_message", return_value=True) as send, \
+                mock.patch.object(ServiceAdmin, "message_user"):
+            ServiceAdmin(Service, site).publish(request, Service.objects.all())
+        self.assertEqual(send.call_args.args[0], 777)
+        self.assertIn("опубликована", send.call_args.args[1])

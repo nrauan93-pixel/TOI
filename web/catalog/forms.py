@@ -105,3 +105,55 @@ class ReviewForm(forms.ModelForm):
         if len(text) < 10:
             raise forms.ValidationError("Напишите хотя бы пару предложений (от 10 символов).")
         return text
+
+
+class ServiceForm(forms.ModelForm):
+    """Карточка услуги, которую исполнитель заполняет сам в кабинете."""
+
+    photo_url = forms.URLField(
+        label="Ссылка на фото", required=False, assume_scheme="https",
+        help_text="Прямая ссылка на картинку (заканчивается на .jpg или .png). Загрузка файлов появится позже.",
+    )
+
+    class Meta:
+        model = Service
+        fields = [
+            "category", "city", "title", "short_description", "description",
+            "price_from", "price_unit", "capacity_min", "capacity_max", "address", "phone", "instagram",
+        ]
+        widgets = {
+            "title": forms.TextInput(attrs={"placeholder": "Например: Тамада Ерлан с командой"}),
+            "short_description": forms.TextInput(attrs={"placeholder": "Одна строка: чем вы хороши"}),
+            "description": forms.Textarea(attrs={"rows": 5, "placeholder": "Что входит, сколько длится, опыт"}),
+            "phone": forms.TextInput(attrs={"type": "tel", "placeholder": "+7 700 000 00 00"}),
+            "instagram": forms.TextInput(attrs={"placeholder": "@toiim"}),
+        }
+        help_texts = {
+            "capacity_min": "Для площадок. Исполнителям можно оставить пустым.",
+            "price_from": "Примерная цена в тенге, только цифры.",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["category"].empty_label = "Выберите категорию"
+        self.fields["city"].empty_label = "Выберите город"
+        if self.instance.pk:
+            image = self.instance.images.filter(image="").exclude(image_url="").first()
+            self.fields["photo_url"].initial = image.image_url if image else ""
+
+    def clean_phone(self):
+        phone = self.cleaned_data.get("phone", "").strip()
+        digits = "".join(ch for ch in phone if ch.isdigit())
+        if phone and not 10 <= len(digits) <= 15:
+            raise forms.ValidationError("Введите номер телефона, например +7 700 000 00 00.")
+        return phone
+
+    def clean_instagram(self):
+        return self.cleaned_data.get("instagram", "").strip().lstrip("@")
+
+    def clean(self):
+        data = super().clean()
+        low, high = data.get("capacity_min"), data.get("capacity_max")
+        if low and high and low > high:
+            self.add_error("capacity_max", "«Гостей до» должно быть не меньше, чем «гостей от».")
+        return data

@@ -18,6 +18,19 @@
     </form>
 
     <div class="profile-main">
+      {% if user.profile.is_provider %}
+      <div class="panel cabinet-note">
+        {% icon "handshake" 22 %}
+        <p>Ваши услуги и заявки клиентов в <a href="{% url 'catalog:cabinet' %}">кабинете исполнителя</a>.{% if not user.profile.telegram_chat_id %} Чтобы заявки приходили в Telegram, заполните поле «Мой Telegram ID» слева.{% endif %}</p>
+      </div>
+      {% else %}
+      <form class="panel" method="post" action="{% url 'accounts:become-provider' %}">
+        {% csrf_token %}
+        <h2 class="panel-title">Вы исполнитель или площадка?</h2>
+        <p class="muted">Включите кабинет: добавите свою услугу в каталог и будете получать заявки от клиентов.</p>
+        <button class="btn btn-outline" type="submit">{% icon "handshake" 18 %}<span>Включить кабинет исполнителя</span></button>
+      </form>
+      {% endif %}
       <div class="panel">
         <h2 class="panel-title">Мои заявки</h2>
         {% if requests %}

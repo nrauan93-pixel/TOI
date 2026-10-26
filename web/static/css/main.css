@@ -130,7 +130,7 @@ code { background: var(--bg); padding: 2px 6px; border-radius: 4px; font-size: .
 .field label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
 .field label .icon { color: var(--gold-600); }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-input[type="text"], input[type="search"], input[type="tel"], input[type="number"], input[type="date"], input[type="email"], input[type="password"], select, textarea {
+input[type="text"], input[type="search"], input[type="tel"], input[type="number"], input[type="date"], input[type="email"], input[type="url"], input[type="password"], select, textarea {
   width: 100%; min-width: 0; min-height: 46px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm);
   background-color: var(--white); color: var(--text); font: 16px/1.4 var(--font-body); transition: border-color .2s, box-shadow .2s;
   appearance: none; -webkit-appearance: none;
@@ -354,6 +354,16 @@ a.fav-form-icon:hover, .fav-form-icon .fav-btn:hover { transform: scale(1.08); b
 .status-contacted { background: var(--gold-100); color: #7A5A1E; }
 .status-confirmed { background: #E7F4EC; color: var(--success); }
 .status-declined, .status-cancelled { background: #FDECEA; color: var(--danger); }
+.status-pending { background: var(--gold-100); color: #7A5A1E; }
+.status-published { background: #E7F4EC; color: var(--success); }
+.status-rejected { background: #FDECEA; color: var(--danger); }
+.btn-sm { min-height: 38px; padding: 6px 12px; font-size: 14px; }
+.cabinet-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.cabinet-form { max-width: 720px; }
+.cabinet-note { grid-template-columns: auto 1fr; align-items: start; background: var(--gold-100); border-color: var(--gold); }
+.cabinet-note a { color: var(--navy); font-weight: 600; }
+.row-actions, .status-form { display: flex; align-items: center; gap: 8px; flex: none; }
+.status-form select { min-height: 38px; width: auto; padding-top: 6px; padding-bottom: 6px; font-size: 14px; }
 .empty-mini { display: flex; gap: 12px; align-items: flex-start; color: var(--muted); }
 .empty-mini a { color: var(--navy); font-weight: 600; }
 

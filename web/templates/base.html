@@ -34,6 +34,7 @@
         <a href="{% url 'catalog:list' %}?kind=performer" class="nav-link{% if kind == 'performer' %} is-active{% endif %}">{% icon "mic" 18 %}<span>{% translate "Исполнители" %}</span></a>
         <a href="{% url 'accounts:favorites' %}" class="nav-link{% if path == '/accounts/favorites/' %} is-active{% endif %}">{% icon "heart" 18 %}<span>{% translate "Избранное" %}</span>{% if FAVORITE_IDS %}<span class="nav-count" aria-label="{{ FAVORITE_IDS|length }} в избранном">{{ FAVORITE_IDS|length }}</span>{% endif %}</a>
         {% if user.is_authenticated %}
+        {% if user.profile.is_provider %}<a href="{% url 'catalog:cabinet' %}" class="nav-link{% if path|slice:':9' == '/cabinet/' %} is-active{% endif %}">{% icon "handshake" 18 %}<span>{% translate "Кабинет" %}</span></a>{% endif %}
         <a href="{% url 'accounts:profile' %}" class="nav-link{% if path == '/accounts/profile/' %} is-active{% endif %}">{% icon "user" 18 %}<span>{{ user.first_name|default:user.username }}</span></a>
         <form method="post" action="{% url 'accounts:logout' %}" class="nav-logout">{% csrf_token %}<button type="submit" class="nav-link">{% translate "Выйти" %}</button></form>
         {% else %}

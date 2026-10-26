@@ -3,6 +3,7 @@
 from django.contrib import admin
 
 from .models import BookingRequest, Category, City, Favorite, Review, Service, ServiceImage
+from .telegram import notify_service_published
 
 
 @admin.register(City)
@@ -38,7 +39,13 @@ class ServiceAdmin(admin.ModelAdmin):
 
     @admin.action(description="Опубликовать выбранные услуги")
     def publish(self, request, queryset):
+        newly_published = list(
+            queryset.exclude(status=Service.Status.PUBLISHED).select_related("owner__profile")
+        )
         updated = queryset.update(status=Service.Status.PUBLISHED)
+        site_url = request.build_absolute_uri("/").rstrip("/")
+        for service in newly_published:
+            notify_service_published(service, site_url)
         self.message_user(request, f"Опубликовано: {updated}")
 
     @admin.action(description="Отклонить выбранные услуги")

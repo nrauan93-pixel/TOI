@@ -87,3 +87,32 @@ def notify_new_booking(booking_id, site_url=""):
     if sent:
         BookingRequest.objects.filter(pk=booking.pk).update(telegram_notified_at=timezone.now())
     return bool(sent)
+
+
+def notify_service_for_review(service, site_url=""):
+    """Сообщить админу, что исполнитель добавил или изменил услугу и её надо проверить."""
+    if not settings.TELEGRAM_ADMIN_CHAT_ID:
+        return False
+    lines = [
+        "<b>Услуга на проверку</b>",
+        "",
+        "<b>Название:</b> {}".format(html.escape(service.title)),
+        "<b>Категория:</b> {}".format(html.escape(service.category.name_ru)),
+        "<b>Город:</b> {}".format(html.escape(service.city.name_ru)),
+        "<b>Исполнитель:</b> {}".format(html.escape(service.owner.get_username() if service.owner else "—")),
+    ]
+    if site_url:
+        lines += ["", "Проверить: {}/admin/catalog/service/{}/change/".format(html.escape(site_url), service.pk)]
+    return send_message(settings.TELEGRAM_ADMIN_CHAT_ID, "\n".join(lines))
+
+
+def notify_service_published(service, site_url=""):
+    """Сообщить исполнителю, что его услугу опубликовали."""
+    owner = service.owner
+    chat_id = getattr(getattr(owner, "profile", None), "telegram_chat_id", None) if owner else None
+    if not chat_id:
+        return False
+    text = "<b>Ваша услуга опубликована в TOIIM</b>\n\n{}".format(html.escape(service.title))
+    if site_url:
+        text += "\n{}".format(html.escape(site_url + service.get_absolute_url()))
+    return send_message(chat_id, text)
