@@ -184,6 +184,34 @@
     sync();
   });
 
+  // Галерея на странице услуги: нажатие на маленькое фото показывает его крупно.
+  document.querySelectorAll("[data-gallery]").forEach(function (gallery) {
+    var main = gallery.querySelector("[data-gallery-main]");
+    gallery.querySelectorAll(".gallery-thumb").forEach(function (thumb) {
+      thumb.addEventListener("click", function () {
+        main.src = thumb.dataset.src;
+        main.alt = thumb.dataset.alt;
+        gallery.querySelectorAll(".gallery-thumb").forEach(function (other) {
+          other.classList.toggle("is-active", other === thumb);
+          if (other === thumb) other.setAttribute("aria-current", "true"); else other.removeAttribute("aria-current");
+        });
+      });
+    });
+  });
+
+  // Занятое время: поля «с» и «до» нужны, только если занят не весь день.
+  document.querySelectorAll("[data-busy-form]").forEach(function (form) {
+    var allDay = form.elements.all_day;
+    var toggle = function () {
+      ["start_time", "end_time"].forEach(function (name) {
+        var field = form.elements[name].closest(".field");
+        field.hidden = allDay.checked;
+      });
+    };
+    allDay.addEventListener("change", toggle);
+    toggle();
+  });
+
   // Калькулятор бюджета: считает сразу при вводе.
   var budget = document.querySelector("[data-budget]");
   if (budget) {

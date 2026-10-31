@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Занятые даты — {{ service.title }} — TOIIM{% endblock %}
+{% block content %}
+{% include "catalog/_cabinet_head.html" %}
+<section class="section section-tight">
+  <div class="container profile-layout">
+    <form class="panel" method="post" novalidate data-once data-busy-form>
+      {% csrf_token %}
+      <h2 class="panel-title">Отметить занятое время</h2>
+      <p class="muted">В поиске по дате вас не покажут в дни, когда вы заняты весь день. Если занята часть дня, клиент не сможет выбрать это время.</p>
+      {% include "partials/form_fields.html" %}
+      <button class="btn btn-navy btn-block" type="submit" data-loading-text="Сохраняем…">{% icon "calendar" 18 %}<span>Отметить</span></button>
+    </form>
+    <div class="panel">
+      <h2 class="panel-title">Ближайшие занятые даты</h2>
+      {% if slots %}
+      <ul class="list">
+        {% for slot in slots %}
+        <li class="list-row">
+          <div><strong>{{ slot.date|date:"d.m.Y, l" }}</strong> · {{ slot.time_label }}{% if slot.note %}<p class="muted">{{ slot.note }}</p>{% endif %}</div>
+          <form method="post" action="{% url 'catalog:busy-delete' slot.pk %}">{% csrf_token %}<button class="btn btn-ghost-dark btn-sm" type="submit">Освободить</button></form>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="empty-mini">{% icon "calendar" 22 %}<p>Все даты свободны. Когда подтвердите заявку с датой, этот день отметится сам.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

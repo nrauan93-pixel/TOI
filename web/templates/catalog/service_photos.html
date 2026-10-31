@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Фото — {{ service.title }} — TOIIM{% endblock %}
+{% block content %}
+{% include "catalog/_cabinet_head.html" %}
+<section class="section section-tight">
+  <div class="container profile-main">
+    <form class="panel cabinet-form" method="post" enctype="multipart/form-data" data-once>
+      {% csrf_token %}
+      <h2 class="panel-title">Добавить фото</h2>
+      <p class="muted">Сначала главный вид (фасад или сцена), потом зал, столы, детали. Загружено {{ images|length }} из {{ max_photos }}.</p>
+      {% include "partials/form_fields.html" %}
+      <button class="btn btn-navy" type="submit" data-loading-text="Загружаем…"{% if images|length >= max_photos %} disabled{% endif %}>{% icon "image" 18 %}<span>Загрузить</span></button>
+    </form>
+
+    <div class="panel">
+      <h2 class="panel-title">Ваши фото</h2>
+      {% if images %}
+      <ul class="photo-grid">
+        {% for image in images %}
+        <li class="photo-tile{% if forloop.first %} is-main{% endif %}">
+          <img src="{{ image.url }}" alt="{{ image.alt|default:service.title }}" loading="lazy">
+          {% if forloop.first %}<span class="photo-badge">{% icon "star" 14 %}Главное</span>{% endif %}
+          <div class="photo-actions">
+            {% if not forloop.first %}
+            <form method="post" action="{% url 'catalog:photo-action' image.pk %}">{% csrf_token %}<input type="hidden" name="action" value="main"><button class="btn btn-outline btn-sm" type="submit">Сделать главным</button></form>
+            {% endif %}
+            <form method="post" action="{% url 'catalog:photo-action' image.pk %}">{% csrf_token %}<input type="hidden" name="action" value="delete"><button class="btn btn-ghost-dark btn-sm" type="submit" aria-label="Удалить фото {{ forloop.counter }}">{% icon "x" 16 %}<span>Удалить</span></button></form>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="empty-mini">{% icon "image" 22 %}<p>Фото пока нет. Карточки с фото выбирают гораздо чаще.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

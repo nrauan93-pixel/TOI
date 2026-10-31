@@ -365,7 +365,7 @@ class ProviderCabinetTests(TestCase):
     def _data(self, **overrides):
         data = {
             "category": self.category.pk, "city": self.city.pk, "title": "Тамада Ерлан", "short_description": "Весело",
-            "price_from": 150000, "price_unit": "event", "photo_url": "https://example.com/erlan.jpg",
+            "price_from": 150000, "price_unit": "event",
         }
         data.update(overrides)
         return data
@@ -386,13 +386,12 @@ class ProviderCabinetTests(TestCase):
     def test_create_service_goes_to_moderation(self):
         self.client.force_login(self.provider)
         response = self.client.post(reverse("catalog:service-create"), self._data())
-        self.assertRedirects(response, reverse("catalog:cabinet"))
         service = Service.objects.get()
+        self.assertRedirects(response, reverse("catalog:service-photos", args=[service.pk]))
         self.assertEqual(service.owner, self.provider)
         self.assertEqual(service.status, Service.Status.PENDING)
         self.assertFalse(service.is_demo)
         self.assertTrue(service.slug.startswith("tamada-erlan-"))
-        self.assertEqual(service.images.get().image_url, "https://example.com/erlan.jpg")
         # До проверки клиенты карточку не видят.
         self.assertEqual(self.client.get(service.get_absolute_url()).status_code, 404)
 
@@ -401,11 +400,10 @@ class ProviderCabinetTests(TestCase):
         self.client.post(reverse("catalog:service-create"), self._data())
         service = Service.objects.get()
         Service.objects.filter(pk=service.pk).update(status=Service.Status.PUBLISHED)
-        self.client.post(reverse("catalog:service-edit", args=[service.pk]), self._data(price_from=200000, photo_url=""))
+        self.client.post(reverse("catalog:service-edit", args=[service.pk]), self._data(price_from=200000))
         service.refresh_from_db()
         self.assertEqual(service.price_from, 200000)
         self.assertEqual(service.status, Service.Status.PENDING)
-        self.assertFalse(service.images.exists())
 
     def test_cannot_edit_someone_elses_service(self):
         service = Service.objects.create(
@@ -477,3 +475,149 @@ class ProviderCabinetTests(TestCase):
             ServiceAdmin(Service, site).publish(request, Service.objects.all())
         self.assertEqual(send.call_args.args[0], 777)
         self.assertIn("опубликована", send.call_args.args[1])
+
+
+
+def _image_file(name="photo.png", size=(2400, 1800), color=(212, 175, 101)):
+    import io
+
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from PIL import Image
+
+    buffer = io.BytesIO()
+    Image.new("RGB", size, color).save(buffer, "PNG")
+    return SimpleUploadedFile(name, buffer.getvalue(), content_type="image/png")
+
+
+class VendorExtrasTests(TestCase):
+    """Фото, пакеты «тамада с командой» и занятые даты."""
+
+    def setUp(self):
+        import datetime
+
+        self.city = City.objects.create(name_ru="Алматы", slug="almaty")
+        self.category = Category.objects.create(name_ru="Ведущие", slug="host", kind="performer")
+        self.owner = User.objects.create_user("erlan", password="pass12345!")
+        self.owner.profile.role = "provider"
+        self.owner.profile.save()
+        self.service = Service.objects.create(
+            owner=self.owner, category=self.category, city=self.city, title="Тамада Ерлан", slug="erlan",
+            short_description="x", price_from=200000, status=Service.Status.PUBLISHED,
+        )
+        self.day = datetime.date.today() + datetime.timedelta(days=30)
+        self.client.force_login(self.owner)
+
+    def _booking(self, **extra):
+        import uuid
+
+        data = {"name": "Алия", "phone": "+7 700 123 45 67", "idempotency_key": str(uuid.uuid4())}
+        data.update(extra)
+        return data
+
+    def test_upload_several_photos_first_is_main_and_served(self):
+        url = reverse("catalog:service-photos", args=[self.service.pk])
+        self.client.post(url, {"photos": [_image_file("a.png"), _image_file("b.png", color=(11, 21, 48))]})
+        images = list(self.service.images.all())
+        self.assertEqual(len(images), 2)
+        self.assertTrue(all(image.stored for image in images))
+        response = self.client.get(images[0].url)
+        self.assertEqual(response["Content-Type"], "image/jpeg")
+        self.assertIn("immutable", response["Cache-Control"])
+        from PIL import Image
+        import io
+        self.assertEqual(max(Image.open(io.BytesIO(response.content)).size), 1600)  # уменьшено
+
+        self.client.post(reverse("catalog:photo-action", args=[images[1].pk]), {"action": "main"})
+        self.assertEqual(self.service.cover.pk, images[1].pk)
+        self.client.post(reverse("catalog:photo-action", args=[images[0].pk]), {"action": "delete"})
+        self.assertEqual(self.service.images.count(), 1)
+        self.assertContains(self.client.get(self.service.get_absolute_url()), images[1].url)
+
+    def test_not_an_image_is_rejected_and_limit_kept(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        from .photos import MAX_PHOTOS
+
+        url = reverse("catalog:service-photos", args=[self.service.pk])
+        response = self.client.post(url, {"photos": [SimpleUploadedFile("x.png", b"not an image")]}, follow=True)
+        self.assertContains(response, "не похоже на фото")
+        self.assertFalse(self.service.images.exists())
+        self.client.post(url, {"photos": [_image_file(f"{i}.png", size=(40, 30)) for i in range(MAX_PHOTOS + 2)]})
+        self.assertEqual(self.service.images.count(), MAX_PHOTOS)
+
+    def test_other_vendor_cannot_touch_photos_packages_or_dates(self):
+        from .models import BusySlot, ServicePackage
+
+        other = User.objects.create_user("other", password="pass12345!")
+        other.profile.role = "provider"
+        other.profile.save()
+        self.client.post(reverse("catalog:service-photos", args=[self.service.pk]), {"photos": [_image_file()]})
+        package = ServicePackage.objects.create(service=self.service, title="П", includes="a", price=1)
+        slot = BusySlot.objects.create(service=self.service, date=self.day)
+        self.client.force_login(other)
+        self.assertEqual(self.client.get(reverse("catalog:service-photos", args=[self.service.pk])).status_code, 404)
+        self.assertEqual(self.client.post(reverse("catalog:photo-action", args=[self.service.cover.pk]), {"action": "delete"}).status_code, 404)
+        self.assertEqual(self.client.post(reverse("catalog:package-delete", args=[package.pk])).status_code, 404)
+        self.assertEqual(self.client.post(reverse("catalog:busy-delete", args=[slot.pk])).status_code, 404)
+        self.assertEqual(self.service.images.count(), 1)
+
+    @override_settings(TELEGRAM_BOT_TOKEN="test-token", TELEGRAM_ADMIN_CHAT_ID="1001")
+    def test_package_shown_and_chosen_in_booking(self):
+        from unittest import mock
+
+        url = reverse("catalog:service-packages", args=[self.service.pk])
+        self.client.post(url, {"title": "Тамада с командой", "includes": "Ведущий\nДиджей\n2 танцора", "price": 450000})
+        package = self.service.packages.get()
+        self.assertEqual(package.items, ["Ведущий", "Диджей", "2 танцора"])
+        self.client.logout()
+        page = self.client.get(self.service.get_absolute_url() + f"?package={package.pk}")
+        self.assertContains(page, "Тамада с командой")
+        self.assertContains(page, "2 танцора")
+        with mock.patch("catalog.telegram.send_message", return_value=True) as send:
+            with self.captureOnCommitCallbacks(execute=True):
+                self.client.post(self.service.get_absolute_url(), self._booking(package=package.pk))
+        self.assertEqual(BookingRequest.objects.get().package, package)
+        self.assertIn("Тамада с командой", send.call_args.args[1])
+
+    def test_busy_day_hidden_in_search_and_blocked_in_booking(self):
+        url = reverse("catalog:service-busy", args=[self.service.pk])
+        self.client.post(url, {"date": self.day.isoformat(), "all_day": "on"})
+        self.assertTrue(self.service.busy_slots.get().is_all_day)
+        catalog = self.client.get(reverse("catalog:list"), {"date": self.day.isoformat()})
+        self.assertNotContains(catalog, "Тамада Ерлан")
+        other_day = self.day.replace(day=1) if self.day.day != 1 else self.day.replace(day=2)
+        self.assertContains(self.client.get(reverse("catalog:list"), {"date": other_day.isoformat()}), "Тамада Ерлан")
+        response = self.client.post(self.service.get_absolute_url(), self._booking(event_date=self.day.isoformat()))
+        self.assertContains(response, "занят")
+        self.assertFalse(BookingRequest.objects.exists())
+
+    def test_part_of_day_busy_blocks_only_that_time(self):
+        url = reverse("catalog:service-busy", args=[self.service.pk])
+        self.client.post(url, {"date": self.day.isoformat(), "start_time": "18:00", "end_time": "23:00"})
+        slot = self.service.busy_slots.get()
+        self.assertEqual(slot.time_label, "18:00–23:00")
+        self.assertContains(self.client.get(reverse("catalog:list"), {"date": self.day.isoformat()}), "Тамада Ерлан")
+        busy = self.client.post(self.service.get_absolute_url(), self._booking(event_date=self.day.isoformat(), event_time="19:00"))
+        self.assertContains(busy, "уже занято")
+        with self.captureOnCommitCallbacks(execute=True):
+            self.client.post(self.service.get_absolute_url(), self._booking(event_date=self.day.isoformat(), event_time="12:00"))
+        self.assertEqual(BookingRequest.objects.count(), 1)
+
+    def test_busy_form_validation(self):
+        import datetime
+
+        url = reverse("catalog:service-busy", args=[self.service.pk])
+        past = datetime.date.today() - datetime.timedelta(days=1)
+        self.assertContains(self.client.post(url, {"date": past.isoformat(), "all_day": "on"}), "уже прошла")
+        self.assertContains(self.client.post(url, {"date": self.day.isoformat(), "start_time": "20:00", "end_time": "18:00"}), "позже")
+        self.assertFalse(self.service.busy_slots.exists())
+
+    def test_confirming_request_marks_day_busy(self):
+        booking = BookingRequest.objects.create(service=self.service, name="Алия", phone="+77001112233", event_date=self.day)
+        self.client.post(reverse("catalog:request-status", args=[booking.pk]), {"status": "confirmed"})
+        self.assertTrue(self.service.busy_slots.get(date=self.day).is_all_day)
+
+    def test_api_gives_full_photo_address_for_bot(self):
+        self.client.post(reverse("catalog:service-photos", args=[self.service.pk]), {"photos": [_image_file()]})
+        data = self.client.get(reverse("catalog:api-service-detail", args=[self.service.pk])).json()
+        self.assertTrue(data["cover_url"].startswith("http://testserver/photos/"))

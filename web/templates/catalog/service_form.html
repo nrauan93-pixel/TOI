@@ -2,19 +2,14 @@
 {% load ui %}
 {% block title %}{% if service %}Изменить услугу{% else %}Новая услуга{% endif %} — TOIIM{% endblock %}
 {% block content %}
-<section class="page-head">
-  <div class="container">
-    <a class="muted" href="{% url 'catalog:cabinet' %}">← Кабинет</a>
-    <h1>{% if service %}Изменить услугу{% else %}Новая услуга{% endif %}</h1>
-    <p class="page-sub">После сохранения мы проверим карточку, и она появится в каталоге.</p>
-  </div>
-</section>
+{% include "catalog/_cabinet_head.html" %}
 <section class="section section-tight">
   <div class="container">
     <form class="panel cabinet-form" method="post" novalidate data-once>
       {% csrf_token %}
       {% include "partials/form_fields.html" %}
-      <button class="btn btn-navy btn-block" type="submit" data-loading-text="Сохраняем…">{% icon "check" 18 %}<span>Сохранить и отправить на проверку</span></button>
+      <button class="btn btn-navy btn-block" type="submit" data-loading-text="Сохраняем…">{% icon "check" 18 %}<span>{% if service %}Сохранить и отправить на проверку{% else %}Сохранить и перейти к фото{% endif %}</span></button>
+      {% if service %}<p class="form-hint">После изменения описания карточка снова уходит на проверку. Фото, пакеты и даты можно менять без проверки.</p>{% endif %}
     </form>
   </div>
 </section>

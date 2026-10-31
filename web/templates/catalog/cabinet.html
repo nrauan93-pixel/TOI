@@ -31,6 +31,11 @@
             <p class="muted">{{ service.category.name }} · {{ service.city.name }} · от {{ service.price_from|tenge }}{% if service.new_requests %} · новых заявок: {{ service.new_requests }}{% endif %}</p>
             {% if service.status == "pending" %}<p class="muted">Проверяем карточку. Клиенты увидят её после проверки.</p>{% endif %}
             {% if service.status == "rejected" %}<p class="muted">Карточку не опубликовали. Исправьте её и сохраните ещё раз.</p>{% endif %}
+            <div class="service-links">
+            <a href="{% url 'catalog:service-photos' service.pk %}">{% icon "image" 16 %}Фото: {{ service.photos_count }}</a>
+            <a href="{% url 'catalog:service-packages' service.pk %}">{% icon "users" 16 %}Пакеты: {{ service.packages_count }}</a>
+            <a href="{% url 'catalog:service-busy' service.pk %}">{% icon "calendar" 16 %}Занятых дат: {{ service.busy_count }}</a>
+            </div>
           </div>
           <div class="row-actions">
             <span class="status status-{{ service.status }}">{{ service.get_status_display }}</span>
@@ -52,7 +57,7 @@
         <li class="list-row">
           <div>
             <strong>{{ item.name }}</strong> · <a href="tel:{{ item.phone }}">{{ item.phone }}</a>
-            <p class="muted">{{ item.service.title }}{% if item.event_date %} · {{ item.event_date|date:"d.m.Y" }}{% endif %}{% if item.guests %} · {{ item.guests }} гостей{% endif %} · пришла {{ item.created_at|date:"d.m.Y H:i" }}</p>
+            <p class="muted">{{ item.service.title }}{% if item.package %} · пакет «{{ item.package.title }}»{% endif %}{% if item.event_date %} · {{ item.event_date|date:"d.m.Y" }}{% if item.event_time %} в {{ item.event_time|time:"H:i" }}{% endif %}{% endif %}{% if item.guests %} · {{ item.guests }} гостей{% endif %} · пришла {{ item.created_at|date:"d.m.Y H:i" }}</p>
             {% if item.message %}<p class="muted">«{{ item.message|truncatechars:160 }}»</p>{% endif %}
           </div>
           {% if item.status == "cancelled" %}

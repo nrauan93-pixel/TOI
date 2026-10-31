@@ -53,7 +53,12 @@ def booking_text(booking, site_url=""):
         "<b>Телефон:</b> {}".format(html.escape(booking.phone)),
     ]
     if booking.event_date:
-        lines.append("<b>Дата:</b> {:%d.%m.%Y}".format(booking.event_date))
+        when = "{:%d.%m.%Y}".format(booking.event_date)
+        if booking.event_time:
+            when += " в {:%H:%M}".format(booking.event_time)
+        lines.append("<b>Дата:</b> {}".format(when))
+    if booking.package:
+        lines.append("<b>Пакет:</b> {} ({:,} ₸)".format(html.escape(booking.package.title), booking.package.price).replace(",", " "))
     if booking.guests:
         lines.append("<b>Гостей:</b> {}".format(booking.guests))
     if booking.message:
@@ -68,7 +73,7 @@ def notify_new_booking(booking_id, site_url=""):
     from .models import BookingRequest
 
     booking = (
-        BookingRequest.objects.select_related("service__city", "service__owner__profile")
+        BookingRequest.objects.select_related("service__city", "service__owner__profile", "package")
         .filter(pk=booking_id).first()
     )
     if booking is None or booking.telegram_notified_at:

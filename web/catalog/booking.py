@@ -16,6 +16,7 @@ def create_booking(service, data, *, source, user=None, telegram_chat_id=None, s
     booking = BookingRequest(
         service=service, user=user, source=source, idempotency_key=key, telegram_chat_id=telegram_chat_id,
         name=data["name"], phone=data["phone"], event_date=data.get("event_date"),
+        event_time=data.get("event_time"), package=data.get("package"),
         guests=data.get("guests"), message=data.get("message") or "",
     )
     try:

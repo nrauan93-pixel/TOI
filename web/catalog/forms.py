@@ -2,7 +2,7 @@ from django import forms
 from django.db.models import Q
 from django.utils import timezone
 
-from .models import BookingRequest, Category, City, Review, Service
+from .models import BookingRequest, BusySlot, Category, City, Review, Service, ServicePackage
 
 SORT_CHOICES = [
     ("popular", "Сначала популярные"),
@@ -45,6 +45,8 @@ class CatalogFilterForm(forms.Form):
             queryset = queryset.filter(category=data["category"])
         if data.get("kind"):
             queryset = queryset.filter(category__kind=data["kind"])
+        if data.get("date"):
+            queryset = queryset.free_on(data["date"])
         guests = data.get("guests")
         if guests:
             # Площадка должна вместить гостей; у исполнителей вместимость не указана.
@@ -63,13 +65,37 @@ class BookingRequestForm(forms.ModelForm):
 
     class Meta:
         model = BookingRequest
-        fields = ["name", "phone", "event_date", "guests", "message"]
+        fields = ["name", "phone", "event_date", "event_time", "guests", "package", "message"]
         widgets = {
             "event_date": forms.DateInput(attrs={"type": "date"}),
+            "event_time": forms.TimeInput(attrs={"type": "time"}),
             "message": forms.Textarea(attrs={"rows": 3, "placeholder": "Например: свадьба, нужен зал и ведущий"}),
             "phone": forms.TextInput(attrs={"type": "tel", "placeholder": "+7 700 000 00 00", "autocomplete": "tel"}),
             "name": forms.TextInput(attrs={"autocomplete": "name"}),
         }
+
+    def __init__(self, *args, service=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.service = service
+        packages = service.packages.all() if service else ServicePackage.objects.none()
+        if packages:
+            self.fields["package"].queryset = packages
+            self.fields["package"].empty_label = "Без пакета"
+            self.fields["package"].label_from_instance = lambda p: f"{p.title} — {p.price:,} ₸".replace(",", " ")
+        else:
+            del self.fields["package"]
+
+    def clean(self):
+        data = super().clean()
+        date, time = data.get("event_date"), data.get("event_time")
+        if self.service and date:
+            slots = self.service.busy_slots.filter(date=date)
+            if any(slot.is_all_day for slot in slots):
+                self.add_error("event_date", "В этот день исполнитель занят. Выберите другую дату.")
+            elif time and any(slot.start_time <= time < slot.end_time for slot in slots):
+                busy = ", ".join(slot.time_label for slot in slots)
+                self.add_error("event_time", f"В это время уже занято ({busy}). Выберите другое время.")
+        return data
 
     def clean_phone(self):
         phone = self.cleaned_data["phone"]
@@ -110,11 +136,6 @@ class ReviewForm(forms.ModelForm):
 class ServiceForm(forms.ModelForm):
     """Карточка услуги, которую исполнитель заполняет сам в кабинете."""
 
-    photo_url = forms.URLField(
-        label="Ссылка на фото", required=False, assume_scheme="https",
-        help_text="Прямая ссылка на картинку (заканчивается на .jpg или .png). Загрузка файлов появится позже.",
-    )
-
     class Meta:
         model = Service
         fields = [
@@ -137,9 +158,6 @@ class ServiceForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["category"].empty_label = "Выберите категорию"
         self.fields["city"].empty_label = "Выберите город"
-        if self.instance.pk:
-            image = self.instance.images.filter(image="").exclude(image_url="").first()
-            self.fields["photo_url"].initial = image.image_url if image else ""
 
     def clean_phone(self):
         phone = self.cleaned_data.get("phone", "").strip()
@@ -157,3 +175,75 @@ class ServiceForm(forms.ModelForm):
         if low and high and low > high:
             self.add_error("capacity_max", "«Гостей до» должно быть не меньше, чем «гостей от».")
         return data
+
+
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    """Поле для нескольких файлов сразу (как в документации Django)."""
+
+    def clean(self, data, initial=None):
+        single = super().clean
+        if isinstance(data, (list, tuple)):
+            return [single(item, initial) for item in data]
+        return [single(data, initial)]
+
+
+class PhotoUploadForm(forms.Form):
+    photos = MultipleFileField(
+        label="Выберите фото", widget=MultipleFileInput(attrs={"accept": "image/jpeg,image/png,image/webp"}),
+        help_text="Можно сразу несколько: главный вид, зал, сцена, детали. До 10 фото на услугу.",
+    )
+
+
+class ServicePackageForm(forms.ModelForm):
+    class Meta:
+        model = ServicePackage
+        fields = ["title", "includes", "price"]
+        widgets = {
+            "title": forms.TextInput(attrs={"placeholder": "Например: Тамада с командой"}),
+            "includes": forms.Textarea(attrs={"rows": 5, "placeholder": "Ведущий\nДиджей и звук\nПевец\n2 танцора"}),
+        }
+
+
+class BusySlotForm(forms.ModelForm):
+    all_day = forms.BooleanField(label="Занят весь день", required=False, initial=True)
+
+    class Meta:
+        model = BusySlot
+        fields = ["date", "all_day", "start_time", "end_time", "note"]
+        widgets = {
+            "date": forms.DateInput(attrs={"type": "date"}),
+            "start_time": forms.TimeInput(attrs={"type": "time"}),
+            "end_time": forms.TimeInput(attrs={"type": "time"}),
+            "note": forms.TextInput(attrs={"placeholder": "Например: свадьба Асель"}),
+        }
+        help_texts = {"start_time": "Если заняты только часть дня, снимите галочку и укажите время."}
+
+    def clean_date(self):
+        date = self.cleaned_data["date"]
+        if date < timezone.localdate():
+            raise forms.ValidationError("Дата уже прошла.")
+        return date
+
+    def clean(self):
+        data = super().clean()
+        if data.get("all_day"):
+            data["start_time"] = data["end_time"] = None
+        else:
+            start, end = data.get("start_time"), data.get("end_time")
+            if not start or not end:
+                self.add_error("start_time", "Укажите время «с» и «до» или поставьте «весь день».")
+            elif start >= end:
+                self.add_error("end_time", "Время «до» должно быть позже, чем «с».")
+        return data
+
+    def save(self, commit=True):
+        slot = super().save(commit=False)
+        if self.cleaned_data.get("all_day"):
+            slot.start_time = slot.end_time = None
+        if commit:
+            slot.save()
+        return slot

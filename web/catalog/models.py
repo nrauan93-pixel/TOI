@@ -66,6 +66,10 @@ class ServiceQuerySet(models.QuerySet):
     def published(self):
         return self.filter(status=Service.Status.PUBLISHED)
 
+    def free_on(self, date):
+        """Без тех, кто занят на эту дату весь день."""
+        return self.exclude(busy_slots__date=date, busy_slots__start_time__isnull=True)
+
 
 class Service(models.Model):
     """Площадка или исполнитель, которого можно найти в каталоге."""
@@ -160,6 +164,10 @@ class ServiceImage(models.Model):
     service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name="images")
     image = models.ImageField("файл", upload_to="services/%Y/%m/", blank=True)
     image_url = models.URLField("или ссылка на фото", blank=True)
+    stored = models.BooleanField(
+        "хранится в базе", default=False, editable=False,
+        help_text="Фото, загруженное исполнителем в кабинете. Сам файл лежит в ServiceImageBlob.",
+    )
     alt = models.CharField("описание фото", max_length=150, blank=True)
     order = models.PositiveSmallIntegerField("порядок", default=0)
 
@@ -173,9 +181,86 @@ class ServiceImage(models.Model):
 
     @property
     def url(self):
+        if self.stored:
+            return reverse("catalog:photo", kwargs={"pk": self.pk})
         if self.image:
             return self.image.url
         return self.image_url
+
+
+class ServiceImageBlob(models.Model):
+    """Байты загруженного фото. Отдельная таблица, чтобы списки услуг не тянули картинки из базы.
+
+    На бесплатном Render файлы на диске пропадают при перезапуске, а база (Neon) остаётся.
+    """
+
+    image = models.OneToOneField(ServiceImage, on_delete=models.CASCADE, primary_key=True, related_name="blob")
+    data = models.BinaryField()
+    content_type = models.CharField(max_length=50, default="image/jpeg")
+
+    class Meta:
+        verbose_name = "файл фото"
+        verbose_name_plural = "файлы фото"
+
+
+class ServicePackage(models.Model):
+    """Пакет услуги: например, «тамада со своей командой» или «зал + меню»."""
+
+    service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name="packages")
+    title = models.CharField("название пакета", max_length=120)
+    includes = models.TextField(
+        "что входит", max_length=1000,
+        help_text="Каждый пункт с новой строки: ведущий, диджей, певец, 2 танцора…",
+    )
+    price = models.PositiveIntegerField("цена, ₸")
+    order = models.PositiveSmallIntegerField("порядок", default=0)
+
+    class Meta:
+        ordering = ["order", "price", "id"]
+        verbose_name = "пакет"
+        verbose_name_plural = "пакеты"
+
+    def __str__(self):
+        return f"{self.title} ({self.service})"
+
+    @property
+    def items(self):
+        return [line.strip(" •-–—") for line in self.includes.splitlines() if line.strip(" •-–—")]
+
+
+class BusySlot(models.Model):
+    """Занятое время исполнителя или площадки. Без времени — занят весь день."""
+
+    service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name="busy_slots")
+    date = models.DateField("дата")
+    start_time = models.TimeField("с", null=True, blank=True)
+    end_time = models.TimeField("до", null=True, blank=True)
+    note = models.CharField("заметка (видна только вам)", max_length=120, blank=True)
+
+    class Meta:
+        ordering = ["date", "start_time"]
+        verbose_name = "занятое время"
+        verbose_name_plural = "занятое время"
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(start_time__isnull=True, end_time__isnull=True)
+                | models.Q(start_time__isnull=False, end_time__isnull=False, start_time__lt=models.F("end_time")),
+                name="busy_slot_time_range_valid",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.service}: {self.date:%d.%m.%Y} {self.time_label}"
+
+    @property
+    def is_all_day(self):
+        return self.start_time is None
+
+    @property
+    def time_label(self):
+        if self.is_all_day:
+            return "весь день"
+        return f"{self.start_time:%H:%M}–{self.end_time:%H:%M}"
 
 
 class Review(models.Model):
@@ -249,6 +334,11 @@ class BookingRequest(models.Model):
     name = models.CharField("имя", max_length=100)
     phone = models.CharField("телефон", max_length=30)
     event_date = models.DateField("дата мероприятия", null=True, blank=True)
+    event_time = models.TimeField("время начала", null=True, blank=True)
+    package = models.ForeignKey(
+        "ServicePackage", verbose_name="пакет", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="requests",
+    )
     guests = models.PositiveIntegerField("гостей", null=True, blank=True)
     message = models.TextField("сообщение", blank=True, max_length=2000)
 

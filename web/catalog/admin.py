@@ -2,7 +2,7 @@
 
 from django.contrib import admin
 
-from .models import BookingRequest, Category, City, Favorite, Review, Service, ServiceImage
+from .models import BookingRequest, BusySlot, Category, City, Favorite, Review, Service, ServiceImage, ServicePackage
 from .telegram import notify_service_published
 
 
@@ -24,6 +24,17 @@ class CategoryAdmin(admin.ModelAdmin):
 class ServiceImageInline(admin.TabularInline):
     model = ServiceImage
     extra = 1
+    readonly_fields = ("stored",)
+
+
+class ServicePackageInline(admin.TabularInline):
+    model = ServicePackage
+    extra = 0
+
+
+class BusySlotInline(admin.TabularInline):
+    model = BusySlot
+    extra = 0
 
 
 @admin.register(Service)
@@ -34,7 +45,7 @@ class ServiceAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("title",)}
     readonly_fields = ("rating_avg", "reviews_count", "created_at", "updated_at")
     autocomplete_fields = ("owner",)
-    inlines = [ServiceImageInline]
+    inlines = [ServiceImageInline, ServicePackageInline, BusySlotInline]
     actions = ["publish", "reject"]
 
     @admin.action(description="Опубликовать выбранные услуги")

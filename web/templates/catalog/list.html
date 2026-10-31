@@ -51,7 +51,11 @@
             <input id="f-budget" type="number" name="budget" min="0" step="10000" inputmode="numeric" value="{{ form.budget.value|default:'' }}">
           </div>
         </div>
-        {% if form.date.value %}<input type="hidden" name="date" value="{{ form.date.value }}">{% endif %}
+        <div class="field">
+          <label for="f-date">Дата тоя</label>
+          <input id="f-date" type="date" name="date" value="{{ form.date.value|default:'' }}">
+          <p class="form-hint">Покажем только тех, кто свободен в этот день.</p>
+        </div>
         <div class="field">
           <label for="f-sort">Сортировка</label>
           <select id="f-sort" name="sort">

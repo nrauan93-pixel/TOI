@@ -1,6 +1,8 @@
 {% for field in form.visible_fields %}
 <div class="field{% if field.errors %} has-error{% endif %}">
-  {% if field.field.widget.input_type == "radio" %}
+  {% if field.field.widget.input_type == "checkbox" %}
+  <label class="choice" for="{{ field.id_for_label }}">{{ field }}<span>{{ field.label }}</span></label>
+  {% elif field.field.widget.input_type == "radio" %}
   <fieldset class="choice-group">
     <legend>{{ field.label }}</legend>
     {% for radio in field %}<label class="choice">{{ radio.tag }}<span>{{ radio.choice_label }}</span></label>{% endfor %}

@@ -1,0 +1,8 @@
+<section class="page-head">
+  <div class="container">
+    <a class="muted" href="{% url 'catalog:cabinet' %}">← Кабинет</a>
+    <h1>{% if service %}{{ service.title }}{% else %}Новая услуга{% endif %}</h1>
+    {% if service %}<p class="page-sub">{{ service.get_status_display }}{% if service.status == "published" %} · <a href="{{ service.get_absolute_url }}">открыть в каталоге</a>{% endif %}</p>{% else %}<p class="page-sub">После сохранения мы проверим карточку, и она появится в каталоге.</p>{% endif %}
+    {% if service %}{% include "catalog/_service_tabs.html" %}{% endif %}
+  </div>
+</section>

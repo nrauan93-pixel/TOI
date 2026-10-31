@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Пакеты — {{ service.title }} — TOIIM{% endblock %}
+{% block content %}
+{% include "catalog/_cabinet_head.html" %}
+<section class="section section-tight">
+  <div class="container profile-layout">
+    <form class="panel" method="post" novalidate data-once>
+      {% csrf_token %}
+      <h2 class="panel-title">{% if editing %}Изменить пакет{% else %}Новый пакет{% endif %}</h2>
+      <p class="muted">Например, «Тамада с командой»: ведущий, диджей, певец и танцоры одной заявкой.</p>
+      {% include "partials/form_fields.html" %}
+      <button class="btn btn-navy btn-block" type="submit" data-loading-text="Сохраняем…">{% icon "check" 18 %}<span>Сохранить пакет</span></button>
+      {% if editing %}<a class="btn btn-ghost-dark btn-block" href="{% url 'catalog:service-packages' service.pk %}">Отмена</a>{% endif %}
+    </form>
+    <div class="panel">
+      <h2 class="panel-title">Ваши пакеты</h2>
+      {% if packages %}
+      <ul class="list">
+        {% for package in packages %}
+        <li class="list-row">
+          <div><strong>{{ package.title }}</strong> · {{ package.price|tenge }}
+            <p class="muted">{{ package.items|join:" · " }}</p></div>
+          <div class="row-actions">
+            <a class="btn btn-outline btn-sm" href="{% url 'catalog:package-edit' service.pk package.pk %}">Изменить</a>
+            <form method="post" action="{% url 'catalog:package-delete' package.pk %}">{% csrf_token %}<button class="btn btn-ghost-dark btn-sm" type="submit">Удалить</button></form>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="empty-mini">{% icon "users" 22 %}<p>Пакетов пока нет. Клиент сможет выбрать пакет прямо в заявке.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

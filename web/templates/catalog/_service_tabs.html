@@ -1,0 +1,7 @@
+{% load ui %}
+<nav class="cabinet-tabs" aria-label="Разделы услуги">
+  <a href="{% url 'catalog:service-edit' service.pk %}" class="{% if tab == 'info' %}is-active{% endif %}"{% if tab == 'info' %} aria-current="page"{% endif %}>{% icon "list-checks" 18 %}<span>Описание</span></a>
+  <a href="{% url 'catalog:service-photos' service.pk %}" class="{% if tab == 'photos' %}is-active{% endif %}"{% if tab == 'photos' %} aria-current="page"{% endif %}>{% icon "image" 18 %}<span>Фото</span></a>
+  <a href="{% url 'catalog:service-packages' service.pk %}" class="{% if tab == 'packages' %}is-active{% endif %}"{% if tab == 'packages' %} aria-current="page"{% endif %}>{% icon "users" 18 %}<span>Пакеты</span></a>
+  <a href="{% url 'catalog:service-busy' service.pk %}" class="{% if tab == 'busy' %}is-active{% endif %}"{% if tab == 'busy' %} aria-current="page"{% endif %}>{% icon "calendar" 18 %}<span>Занятые даты</span></a>
+</nav>

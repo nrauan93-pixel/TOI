@@ -30,9 +30,14 @@ class ServiceSerializer(serializers.ModelSerializer):
             "rating_avg", "reviews_count", "is_demo", "is_verified", "cover_url",
         ]
 
+    def _absolute(self, url):
+        # Фото из кабинета отдаются нашим сайтом по адресу /photos/…: боту нужен полный адрес.
+        request = self.context.get("request")
+        return request.build_absolute_uri(url) if request and url.startswith("/") else url
+
     def get_cover_url(self, obj):
         cover = obj.cover
-        return cover.url if cover else None
+        return self._absolute(cover.url) if cover and cover.url else None
 
 
 class ServiceDetailSerializer(ServiceSerializer):
@@ -50,7 +55,7 @@ class ServiceDetailSerializer(ServiceSerializer):
         return request.build_absolute_uri(path) if request else path
 
     def get_images(self, obj):
-        return [image.url for image in obj.images.all() if image.url]
+        return [self._absolute(image.url) for image in obj.images.all() if image.url]
 
 
 class BookingRequestCreateSerializer(serializers.Serializer):

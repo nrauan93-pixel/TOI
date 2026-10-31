@@ -12,7 +12,7 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from catalog.models import Category, City, Review, Service, ServiceImage
+from catalog.models import Category, City, Review, Service, ServiceImage, ServicePackage
 
 CITIES = [
     ("almaty", "Алматы", "Алматы"),
@@ -90,6 +90,10 @@ PHOTOS = {
     "dina-decor-aktobe": ("photo-1738025277281-582526f674c4", "арка с розовыми и белыми цветами"),
     "tatti-cake-astana": ("photo-1525257831700-183b9b8bf5c4", "свадебный торт с цветами"),
 }
+HOST_PACKAGES = [
+    ("Только ведущий", "Ведущий на весь вечер\nСценарий и конкурсы", 1),
+    ("Тамада с командой", "Ведущий\nДиджей и звук\nПевец\n2 танцора", 2),
+]
 PHOTO_URL = "https://images.unsplash.com/{}?auto=format&fit=crop&w=1200&q=80"
 
 DEMO_REVIEW_TEXTS = {
@@ -142,9 +146,16 @@ class Command(BaseCommand):
             if slug in PHOTOS:
                 photo_id, alt = PHOTOS[slug]
                 ServiceImage.objects.update_or_create(
-                    service=service, order=0, image="",
+                    service=service, order=0, image="", stored=False,
                     defaults={"image_url": PHOTO_URL.format(photo_id), "alt": f"Фото для примера: {alt}"},
                 )
+            if cat == "host":
+                # Пример пакета «тамада со своей командой»: так ведущие продают себя на самом деле.
+                for order, (name, includes, factor) in enumerate(HOST_PACKAGES):
+                    ServicePackage.objects.update_or_create(
+                        service=service, title=name,
+                        defaults={"includes": includes, "price": price * factor, "order": order},
+                    )
             for reviewer, rating in zip(reviewers, ratings):
                 Review.objects.update_or_create(
                     service=service, user=reviewer,

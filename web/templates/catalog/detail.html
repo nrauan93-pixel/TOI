@@ -18,17 +18,22 @@
 <section class="section section-tight">
   <div class="container detail-layout">
     <div class="detail-main">
-      <div class="gallery">
-        {% with images=service.images.all %}
-        {% if images %}
-          {% for image in images|slice:":3" %}
-          <figure class="gallery-item{% if forloop.first %} is-main{% endif %}"><img src="{{ image.url }}" alt="{{ image.alt|default:service.title }}" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}" width="960" height="720" data-img></figure>
+      {% with images=service.images.all %}
+      {% if images %}
+      <div class="gallery-main" data-gallery>
+        <figure class="gallery-item is-main"><img src="{{ images.0.url }}" alt="{{ images.0.alt|default:service.title }}" loading="eager" width="960" height="720" data-img data-gallery-main></figure>
+        {% if images|length > 1 %}
+        <ul class="gallery-thumbs" aria-label="Все фото: {{ images|length }}">
+          {% for image in images %}
+          <li><button type="button" class="gallery-thumb{% if forloop.first %} is-active{% endif %}" data-src="{{ image.url }}" data-alt="{{ image.alt|default:service.title }}" aria-label="Фото {{ forloop.counter }} из {{ images|length }}"{% if forloop.first %} aria-current="true"{% endif %}><img src="{{ image.url }}" alt="" loading="lazy" width="120" height="90"></button></li>
           {% endfor %}
-        {% else %}
-          <figure class="gallery-item is-main"><span class="media-placeholder media-placeholder-lg">{% icon service.category.icon 56 %}<span class="placeholder-note">Фото пока не добавлены</span></span></figure>
+        </ul>
         {% endif %}
-        {% endwith %}
       </div>
+      {% else %}
+      <div class="gallery"><figure class="gallery-item is-main"><span class="media-placeholder media-placeholder-lg">{% icon service.category.icon 56 %}<span class="placeholder-note">Фото пока не добавлены</span></span></figure></div>
+      {% endif %}
+      {% endwith %}
 
       <div class="detail-header">
         <div class="tag-row">
@@ -58,6 +63,32 @@
       {% if service.description %}
       <div class="prose"><h2>Описание</h2>{{ service.description|linebreaks }}</div>
       {% endif %}
+
+      {% if packages %}
+      <div class="packages" id="packages">
+        <h2>Пакеты</h2>
+        <div class="package-grid">
+          {% for package in packages %}
+          <article class="package-card">
+            <h3>{{ package.title }}</h3>
+            <p class="package-price">{{ package.price|tenge }}</p>
+            <ul>{% for item in package.items %}<li>{% icon "check" 16 %}{{ item }}</li>{% endfor %}</ul>
+            <a class="btn btn-outline btn-block" href="?package={{ package.pk }}#request">Выбрать пакет</a>
+          </article>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="busy" id="dates">
+        <h2>Занятые даты</h2>
+        {% if busy_slots %}
+        <p class="muted">Ближайшие 3 месяца. В остальные дни можно отправить заявку.</p>
+        <ul class="busy-list">{% for slot in busy_slots %}<li><strong>{{ slot.date|date:"d.m" }}</strong> {{ slot.date|date:"D" }}<span>{{ slot.time_label }}</span></li>{% endfor %}</ul>
+        {% else %}
+        <p class="empty-inline">{% if service.owner_id %}На ближайшие 3 месяца все даты свободны.{% else %}Исполнитель пока не отметил занятые даты, уточните в заявке.{% endif %}</p>
+        {% endif %}
+      </div>
 
       <div class="reviews" id="reviews">
         <h2>Отзывы</h2>

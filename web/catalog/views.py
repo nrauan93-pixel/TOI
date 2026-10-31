@@ -1,15 +1,18 @@
 import uuid
+from datetime import timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.http import HttpResponse
+from django.utils import timezone
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from .booking import create_booking
 from .forms import BookingRequestForm, CatalogFilterForm, ReviewForm
-from .models import BookingRequest, Category, Favorite, Review, Service
+from .models import BookingRequest, Category, Favorite, Review, Service, ServiceImageBlob
 
 PAGE_SIZE = 9
 
@@ -41,7 +44,7 @@ def service_detail(request, slug):
     )
 
     if request.method == "POST":
-        form = BookingRequestForm(request.POST)
+        form = BookingRequestForm(request.POST, service=service)
         if form.is_valid():
             # Повторная отправка той же формы (двойной клик) новую заявку не создаёт.
             create_booking(
@@ -57,7 +60,9 @@ def service_detail(request, slug):
         if request.user.is_authenticated:
             initial["name"] = request.user.get_full_name() or request.user.username
             initial["phone"] = getattr(getattr(request.user, "profile", None), "phone", "")
-        form = BookingRequestForm(initial=initial)
+        if request.GET.get("package", "").isdigit():
+            initial["package"] = int(request.GET["package"])
+        form = BookingRequestForm(initial=initial, service=service)
 
     my_review = None
     if request.user.is_authenticated:
@@ -76,7 +81,19 @@ def service_detail(request, slug):
         "review_form": ReviewForm(instance=my_review),
         "my_review": my_review,
         "is_owner": request.user.is_authenticated and service.owner_id == request.user.pk,
+        "packages": service.packages.all(),
+        "busy_slots": service.busy_slots.filter(
+            date__gte=timezone.localdate(), date__lte=timezone.localdate() + timedelta(days=90),
+        ),
     })
+
+
+def service_photo(request, pk):
+    """Фото, загруженное исполнителем. Адрес у каждого фото свой и не меняется, поэтому кэшируем надолго."""
+    blob = get_object_or_404(ServiceImageBlob.objects.only("data", "content_type"), image_id=pk)
+    response = HttpResponse(bytes(blob.data), content_type=blob.content_type)
+    response["Cache-Control"] = "public, max-age=31536000, immutable"
+    return response
 
 
 def _back(request, fallback):
