@@ -622,3 +622,35 @@ class VendorExtrasTests(TestCase):
         self.client.post(reverse("catalog:service-photos", args=[self.service.pk]), {"photos": [_image_file()]})
         data = self.client.get(reverse("catalog:api-service-detail", args=[self.service.pk])).json()
         self.assertTrue(data["cover_url"].startswith("http://testserver/photos/"))
+
+
+class AddGulvarCommandTests(TestCase):
+    def test_creates_gulvar_once_with_photos_and_packages(self):
+        from unittest import mock
+
+        from django.contrib.auth import get_user_model
+        from django.core.management import call_command
+
+        call_command("seed_demo", verbosity=0)
+        with mock.patch.dict("os.environ", {"GULVAR_PASSWORD": "Gulvar-Strong-Pass-2026"}):
+            call_command("add_gulvar", verbosity=0)
+            call_command("add_gulvar", verbosity=0)
+
+        service = Service.objects.get(slug="gulvar-almaty")
+        self.assertEqual(Service.objects.filter(slug="gulvar-almaty").count(), 1)
+        self.assertEqual(service.status, Service.Status.PUBLISHED)
+        self.assertTrue(service.is_verified)
+        self.assertFalse(service.is_demo)
+        self.assertEqual(service.city.slug, "almaty")
+        self.assertEqual(service.packages.count(), 6)
+        self.assertEqual(service.images.filter(stored=True).count(), 9)
+        user = get_user_model().objects.get(username="gulvar")
+        self.assertEqual(service.owner, user)
+        self.assertTrue(user.profile.is_provider)
+        self.assertTrue(user.check_password("Gulvar-Strong-Pass-2026"))
+        self.assertFalse(user.is_staff)
+
+        response = self.client.get(service.get_absolute_url())
+        self.assertContains(response, "Diamond 2")
+        photo = self.client.get(service.images.first().url)
+        self.assertEqual(photo.status_code, 200)
