@@ -21,11 +21,12 @@ class SignUpForm(UserCreationForm):
     email = forms.EmailField(label="Почта")
     phone = forms.CharField(label="Телефон", max_length=30, required=False, validators=[validate_phone])
     role = forms.ChoiceField(
-        label="Я регистрируюсь как", choices=Profile.Role.choices, initial=Profile.Role.CLIENT,
+        label="Кто вы?", choices=Profile.Role.choices, initial=Profile.Role.CLIENT,
         widget=forms.RadioSelect,
     )
 
-    field_order = ["username", "first_name", "email", "phone", "role", "password1", "password2"]
+    # Сначала выбор «клиент или исполнитель»: от него зависит, что человек увидит на сайте.
+    field_order = ["role", "username", "first_name", "email", "phone", "password1", "password2"]
 
     class Meta(UserCreationForm.Meta):
         model = User

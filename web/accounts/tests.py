@@ -84,3 +84,14 @@ class AccountTests(TestCase):
         user.profile.save()
         response = self.client.post(reverse("accounts:profile"), {"first_name": "Е", "email": "e@example.kz", "telegram_chat_id": "42"})
         self.assertContains(response, "уже привязан")
+
+    def test_signup_starts_with_role_choice(self):
+        page = self.client.get(reverse("accounts:signup")).content.decode()
+        self.assertLess(page.index('name="role"'), page.index('name="username"'))
+
+    def test_menu_has_budget_calculator_not_duplicate_catalog_links(self):
+        page = self.client.get(reverse("core:home"))
+        self.assertContains(page, "Калькулятор бюджета")
+        nav = page.content.decode().split('data-nav>')[1].split('</nav>')[0]
+        self.assertNotIn("kind=venue", nav)
+        self.assertNotIn("kind=performer", nav)

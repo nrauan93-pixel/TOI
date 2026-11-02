@@ -375,13 +375,14 @@ class ProviderCabinetTests(TestCase):
         self.client.force_login(client_user)
         self.assertRedirects(self.client.get(reverse("catalog:cabinet")), reverse("accounts:profile"))
 
-    def test_client_can_turn_on_cabinet(self):
+    def test_client_sees_no_vendor_buttons(self):
         client_user = User.objects.create_user("aliya", password="pass12345!")
         self.client.force_login(client_user)
-        response = self.client.post(reverse("accounts:become-provider"))
-        self.assertRedirects(response, reverse("catalog:cabinet"))
-        client_user.profile.refresh_from_db()
-        self.assertTrue(client_user.profile.is_provider)
+        page = self.client.get(reverse("accounts:profile"))
+        self.assertNotContains(page, "Кабинет")
+        self.assertNotContains(page, "Telegram ID")
+        self.client.force_login(self.provider)
+        self.assertContains(self.client.get(reverse("accounts:profile")), reverse("catalog:cabinet"))
 
     def test_create_service_goes_to_moderation(self):
         self.client.force_login(self.provider)

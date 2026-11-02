@@ -44,7 +44,7 @@ def provider_required(view):
     def wrapper(request, *args, **kwargs):
         profile = getattr(request.user, "profile", None)
         if not (profile and profile.is_provider):
-            messages.info(request, "Кабинет нужен исполнителям и площадкам. Включить его можно в профиле.")
+            messages.info(request, "Кабинет только для исполнителей и площадок.")
             return redirect("accounts:profile")
         return view(request, *args, **kwargs)
     return wrapper

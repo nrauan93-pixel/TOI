@@ -3,7 +3,6 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
-from django.views.decorators.http import require_POST
 
 from catalog.models import Favorite
 from catalog.telegram import send_message
@@ -69,12 +68,3 @@ def _check_telegram(request, chat_id):
             "и проверьте, что ID без ошибок.",
         )
 
-
-@login_required
-@require_POST
-def become_provider(request):
-    profile = request.user.profile
-    profile.role = profile.Role.PROVIDER
-    profile.save(update_fields=["role"])
-    messages.success(request, "Кабинет исполнителя включён. Добавьте свою первую услугу.")
-    return redirect("catalog:cabinet")

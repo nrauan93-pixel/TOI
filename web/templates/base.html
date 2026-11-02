@@ -29,9 +29,8 @@
 
       <nav class="main-nav" id="main-nav" aria-label="{% translate 'Главное меню' %}" data-nav>
         {% with path=request.path kind=request.GET.kind %}
-        <a href="{% url 'catalog:list' %}" class="nav-link{% if path == '/catalog/' and not kind %} is-active{% endif %}">{% icon "layout-grid" 18 %}<span>{% translate "Каталог" %}</span></a>
-        <a href="{% url 'catalog:list' %}?kind=venue" class="nav-link{% if kind == 'venue' %} is-active{% endif %}">{% icon "building-2" 18 %}<span>{% translate "Площадки" %}</span></a>
-        <a href="{% url 'catalog:list' %}?kind=performer" class="nav-link{% if kind == 'performer' %} is-active{% endif %}">{% icon "mic" 18 %}<span>{% translate "Исполнители" %}</span></a>
+        <a href="{% url 'catalog:list' %}" class="nav-link{% if path == '/catalog/' %} is-active{% endif %}">{% icon "layout-grid" 18 %}<span>{% translate "Каталог" %}</span></a>
+        <a href="{% url 'core:home' %}#budget" class="nav-link">{% icon "calculator" 18 %}<span>{% translate "Калькулятор бюджета" %}</span></a>
         <a href="{% url 'accounts:favorites' %}" class="nav-link{% if path == '/accounts/favorites/' %} is-active{% endif %}">{% icon "heart" 18 %}<span>{% translate "Избранное" %}</span>{% if FAVORITE_IDS %}<span class="nav-count" aria-label="{{ FAVORITE_IDS|length }} в избранном">{{ FAVORITE_IDS|length }}</span>{% endif %}</a>
         {% if user.is_authenticated %}
         {% if user.profile.is_provider %}<a href="{% url 'catalog:cabinet' %}" class="nav-link{% if path|slice:':9' == '/cabinet/' %} is-active{% endif %}">{% icon "handshake" 18 %}<span>{% translate "Кабинет" %}</span></a>{% endif %}
