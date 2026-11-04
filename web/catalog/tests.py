@@ -673,3 +673,18 @@ class ProviderCannotReviewTests(TestCase):
         response = self.client.post(reverse("catalog:review", args=[service.slug]), {"rating": 1, "text": "плохо"})
         self.assertEqual(response.status_code, 302)
         self.assertEqual(service.reviews.count(), before)
+
+
+class RemoveDemoTests(TestCase):
+    def test_removes_only_demo_and_keeps_real(self):
+        call_command("seed_demo", verbosity=0)
+        call_command("add_gulvar", verbosity=0)
+        call_command("remove_demo", verbosity=0)
+        call_command("seed_demo", base=True, verbosity=0)  # следующий деплой не возвращает демо
+        self.assertFalse(Service.objects.filter(is_demo=True).exists())
+        self.assertTrue(Service.objects.filter(slug="gulvar-almaty").exists())
+        self.assertFalse(get_user_model().objects.filter(username__startswith="demo_").exists())
+        self.assertTrue(City.objects.filter(slug="almaty").exists())
+        self.assertTrue(Category.objects.filter(slug="toikhana").exists())
+        self.assertEqual(self.client.get(reverse("core:home")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("catalog:list")).status_code, 200)

@@ -177,3 +177,14 @@ class PasswordResetTests(TestCase):
 
     def test_login_page_links_to_reset(self):
         self.assertContains(self.client.get(reverse("accounts:login")), reverse("accounts:password_reset"))
+
+
+class PasswordResetOtherEmailTests(TestCase):
+    def setUp(self):
+        cache.clear()
+
+    def test_reset_for_foreign_email_sends_nothing(self):
+        User.objects.create_user("aru2", email="mine@example.kz", password="Old-Strong-Pass-2026")
+        response = self.client.post(reverse("accounts:password_reset"), {"email": "other@example.kz"}, follow=True)
+        self.assertContains(response, "Проверьте почту")
+        self.assertEqual(len(mail.outbox), 0)

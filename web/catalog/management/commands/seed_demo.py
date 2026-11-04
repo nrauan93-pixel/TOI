@@ -106,6 +106,12 @@ DEMO_REVIEW_TEXTS = {
 class Command(BaseCommand):
     help = "Заполнить базу демо-данными (города, категории, услуги, отзывы)."
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--base", action="store_true",
+            help="Только города и категории, без демо-услуг (так запускается на сайте).",
+        )
+
     @transaction.atomic
     def handle(self, *args, **options):
         cities = {}
@@ -119,6 +125,11 @@ class Command(BaseCommand):
             categories[slug], _ = Category.objects.update_or_create(
                 slug=slug, defaults={"name_ru": ru, "name_kk": kk, "kind": kind, "icon": icon, "order": order},
             )
+
+        if options["base"]:
+            if options["verbosity"] > 0:
+                self.stdout.write(f"Города ({len(cities)}) и категории ({len(categories)}) на месте.")
+            return
 
         reviewers = self._demo_reviewers()
 
