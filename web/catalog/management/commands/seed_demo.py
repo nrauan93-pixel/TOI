@@ -30,6 +30,7 @@ CATEGORIES = [
     ("restaurant", "Рестораны", "Мейрамханалар", "venue", "utensils"),
     ("host", "Ведущие и тамада", "Асабалар", "performer", "mic"),
     ("music", "Музыканты и DJ", "Әншілер мен DJ", "performer", "music"),
+    ("show", "Шоу-программы", "Шоу-бағдарламалар", "performer", "sparkles"),
     ("photo-video", "Фото и видео", "Фото және бейне", "performer", "camera"),
     ("decor", "Декор и оформление", "Безендіру", "service", "flower-2"),
     ("cake", "Торты и сладости", "Торттар", "service", "cake-slice"),

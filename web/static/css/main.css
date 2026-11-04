@@ -218,7 +218,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--g
 .search-panel { position: relative; z-index: 2; margin: 56px 0 -48px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)) auto; gap: 12px; align-items: end; padding: 20px; background: var(--white); color: var(--text); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); }
 .hero + .section { padding-top: 136px; }
 
-.category-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; }
+.category-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
 .category-tile { display: grid; align-content: start; gap: 4px; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius-lg); text-decoration: none; transition: border-color .2s, box-shadow .2s, transform .2s var(--ease); height: 100%; }
 .category-tile:hover { border-color: var(--gold); box-shadow: var(--shadow); transform: translateY(-2px); }
 .category-icon { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 12px; background: var(--gold-100); color: var(--gold-600); margin-bottom: 10px; }
