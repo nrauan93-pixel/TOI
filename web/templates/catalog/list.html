@@ -22,12 +22,6 @@
           <div class="input-icon">{% icon "search" 18 %}<input id="f-q" type="search" name="q" value="{{ form.q.value|default:'' }}" placeholder="Название или описание"></div>
         </div>
         <div class="field">
-          <label for="f-kind">Тип</label>
-          <select id="f-kind" name="kind">
-            {% for value, label in form.fields.kind.choices %}<option value="{{ value }}"{% if active_kind == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
-          </select>
-        </div>
-        <div class="field">
           <label for="f-city">Город</label>
           <select id="f-city" name="city">
             <option value="">Все города</option>

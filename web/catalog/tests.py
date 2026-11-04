@@ -688,3 +688,12 @@ class RemoveDemoTests(TestCase):
         self.assertTrue(Category.objects.filter(slug="toikhana").exists())
         self.assertEqual(self.client.get(reverse("core:home")).status_code, 200)
         self.assertEqual(self.client.get(reverse("catalog:list")).status_code, 200)
+
+
+class CatalogFilterCategoriesTests(TestCase):
+    def test_filter_lists_every_category_and_no_type_select(self):
+        call_command("seed_demo", base=True, verbosity=0)
+        page = self.client.get(reverse("catalog:list"))
+        self.assertNotContains(page, 'name="kind"')
+        for category in Category.objects.all():
+            self.assertContains(page, f'value="{category.slug}"')
