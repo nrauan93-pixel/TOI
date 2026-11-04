@@ -1,0 +1,10 @@
+{% extends "accounts/auth_base.html" %}
+{% load ui %}
+{% block title %}Проверьте почту — TOIIM{% endblock %}
+{% block auth %}
+<h1>Проверьте почту</h1>
+<p class="auth-sub">Мы отправили письмо на <strong>{{ email }}</strong>. Откройте ссылку из письма, чтобы подтвердить почту и войти.</p>
+<p class="auth-sub">Письма нет? Загляните в «Спам» или «Промоакции».</p>
+<a class="btn btn-navy btn-block" href="{% url 'accounts:resend_activation' %}">{% icon "send" 18 %}<span>Отправить письмо ещё раз</span></a>
+<p class="auth-switch"><a href="{% url 'accounts:login' %}">Вернуться ко входу</a></p>
+{% endblock %}

@@ -95,3 +95,85 @@ class AccountTests(TestCase):
         nav = page.content.decode().split('data-nav>')[1].split('</nav>')[0]
         self.assertNotIn("kind=venue", nav)
         self.assertNotIn("kind=performer", nav)
+
+
+from django.core import mail  # noqa: E402
+from django.core.cache import cache  # noqa: E402
+from django.test import override_settings  # noqa: E402
+
+
+@override_settings(EMAIL_VERIFICATION=True)
+class EmailVerificationTests(TestCase):
+    data = {
+        "username": "dana", "first_name": "Дана", "email": "dana@example.kz", "phone": "",
+        "role": "client", "password1": "Toi-Strong-Pass-2026", "password2": "Toi-Strong-Pass-2026",
+    }
+
+    def setUp(self):
+        cache.clear()
+
+    def _link(self):
+        import re
+
+        return re.search(r"http://testserver(/\S+)", mail.outbox[-1].body).group(1)
+
+    def test_signup_requires_email_confirmation(self):
+        response = self.client.post(reverse("accounts:signup"), self.data)
+        self.assertContains(response, "Проверьте почту")
+        user = User.objects.get(username="dana")
+        self.assertFalse(user.is_active)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ["dana@example.kz"])
+
+        # До подтверждения войти нельзя, и сайт говорит почему.
+        response = self.client.post(reverse("accounts:login"), {"username": "dana", "password": "Toi-Strong-Pass-2026"})
+        self.assertContains(response, "подтвердите почту")
+
+        response = self.client.get(self._link(), follow=True)
+        self.assertTrue(response.context["user"].is_authenticated)
+        user.refresh_from_db()
+        self.assertTrue(user.is_active)
+
+        # Ссылка одноразовая.
+        self.client.logout()
+        response = self.client.get(self._link(), follow=True)
+        self.assertFalse(response.context["user"].is_authenticated)
+
+    def test_resend_does_not_reveal_unknown_email(self):
+        response = self.client.post(reverse("accounts:resend_activation"), {"email": "nobody@example.kz"})
+        self.assertContains(response, "Проверьте почту")
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_honeypot_blocks_bots(self):
+        self.client.post(reverse("accounts:signup"), dict(self.data, website="http://spam"))
+        self.assertFalse(User.objects.filter(username="dana").exists())
+
+    @override_settings(SIGNUPS_PER_IP_PER_HOUR=2)
+    def test_signup_rate_limit_per_ip(self):
+        for i in range(2):
+            self.client.post(reverse("accounts:signup"), dict(self.data, username=f"bot{i}", email=f"bot{i}@x.kz"))
+        response = self.client.post(reverse("accounts:signup"), dict(self.data, username="bot9", email="bot9@x.kz"))
+        self.assertEqual(response.status_code, 429)
+        self.assertFalse(User.objects.filter(username="bot9").exists())
+
+
+class PasswordResetTests(TestCase):
+    def setUp(self):
+        cache.clear()
+
+    def test_reset_password_by_email(self):
+        import re
+
+        User.objects.create_user("aru", email="aru@example.kz", password="Old-Strong-Pass-2026")
+        response = self.client.post(reverse("accounts:password_reset"), {"email": "aru@example.kz"}, follow=True)
+        self.assertContains(response, "Проверьте почту")
+        self.assertEqual(len(mail.outbox), 1)
+        link = re.search(r"http://testserver(/\S+)", mail.outbox[0].body).group(1)
+        response = self.client.get(link, follow=True)
+        new = "New-Strong-Pass-2026"
+        response = self.client.post(response.redirect_chain[-1][0], {"new_password1": new, "new_password2": new}, follow=True)
+        self.assertContains(response, "Пароль изменён")
+        self.assertTrue(self.client.login(username="aru", password=new))
+
+    def test_login_page_links_to_reset(self):
+        self.assertContains(self.client.get(reverse("accounts:login")), reverse("accounts:password_reset"))

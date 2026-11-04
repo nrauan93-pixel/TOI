@@ -654,3 +654,22 @@ class AddGulvarCommandTests(TestCase):
         self.assertContains(response, "Diamond 2")
         photo = self.client.get(service.images.first().url)
         self.assertEqual(photo.status_code, 200)
+
+
+class ProviderCannotReviewTests(TestCase):
+    def test_provider_cannot_rate_other_services(self):
+        call_command("seed_demo", verbosity=0)
+        service = Service.objects.published().first()
+        rival = get_user_model().objects.create_user("rival", password="Rival-Strong-Pass-2026")
+        rival.profile.role = "provider"
+        rival.profile.save()
+        self.client.force_login(rival)
+
+        page = self.client.get(service.get_absolute_url())
+        self.assertNotContains(page, "Опубликовать отзыв")
+        self.assertContains(page, "только клиенты")
+
+        before = service.reviews.count()
+        response = self.client.post(reverse("catalog:review", args=[service.slug]), {"rating": 1, "text": "плохо"})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(service.reviews.count(), before)

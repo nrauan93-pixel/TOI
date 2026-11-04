@@ -7,9 +7,11 @@
 <form method="post" novalidate data-once>
   {% csrf_token %}
   <input type="hidden" name="next" value="{{ next }}">
-  {% if form.non_field_errors %}<p class="form-error" role="alert">{% icon "circle-alert" 16 %}Неверный логин или пароль.</p>{% endif %}
+  {% if form.needs_activation %}<p class="form-error" role="alert">{% icon "circle-alert" 16 %}<span>Сначала подтвердите почту по ссылке из письма. <a href="{% url 'accounts:resend_activation' %}">Отправить письмо ещё раз</a></span></p>
+  {% elif form.non_field_errors %}<p class="form-error" role="alert">{% icon "circle-alert" 16 %}Неверный логин или пароль.</p>{% endif %}
   <div class="field"><label for="id_username">Логин</label><input type="text" name="username" id="id_username" autocomplete="username" required autofocus value="{{ form.username.value|default:'' }}"></div>
   <div class="field"><label for="id_password">Пароль</label><input type="password" name="password" id="id_password" autocomplete="current-password" required></div>
+  <p class="auth-forgot"><a href="{% url 'accounts:password_reset' %}">Забыли пароль?</a></p>
   <button class="btn btn-gold btn-lg btn-block" type="submit" data-loading-text="Входим…">{% icon "log-in" 18 %}<span>Войти</span></button>
 </form>
 <p class="auth-switch">Нет аккаунта? <a href="{% url 'accounts:signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Зарегистрируйтесь</a></p>

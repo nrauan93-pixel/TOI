@@ -92,7 +92,7 @@
 
       <div class="reviews" id="reviews">
         <h2>Отзывы</h2>
-        {% if user.is_authenticated and not is_owner %}
+        {% if can_review %}
         <form class="review-form" method="post" action="{% url 'catalog:review' service.slug %}" data-once>
           {% csrf_token %}
           <h3>{% if my_review %}Изменить ваш отзыв{% else %}Оставить отзыв{% endif %}</h3>
@@ -109,6 +109,8 @@
           </div>
           <button class="btn btn-navy" type="submit" data-loading-text="Сохраняем…">{% icon "check" 18 %}<span>{% if my_review %}Сохранить изменения{% else %}Опубликовать отзыв{% endif %}</span></button>
         </form>
+        {% elif user.is_authenticated and not is_owner %}
+        <p class="review-login">{% icon "info" 18 %}Отзывы и оценки оставляют только клиенты.</p>
         {% elif not user.is_authenticated %}
         <p class="review-login">{% icon "log-in" 18 %}<a href="{% url 'accounts:login' %}?next={{ service.get_absolute_url|urlencode }}%23reviews">Войдите</a>, чтобы оставить отзыв.</p>
         {% endif %}

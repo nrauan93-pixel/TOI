@@ -7,6 +7,7 @@
 <form method="post" novalidate data-once>
   {% csrf_token %}
   <input type="hidden" name="next" value="{{ next }}">
+  <div class="hp-field" aria-hidden="true"><label for="id_website">Сайт</label><input type="text" name="website" id="id_website" tabindex="-1" autocomplete="off"></div>
   {% include "partials/form_fields.html" %}
   <button class="btn btn-gold btn-lg btn-block" type="submit" data-loading-text="Создаём аккаунт…">{% icon "user" 18 %}<span>Создать аккаунт</span></button>
 </form>

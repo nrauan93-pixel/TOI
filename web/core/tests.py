@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 
@@ -49,3 +49,27 @@ class CsrfFailurePageTests(TestCase):
         self.assertEqual(response.status_code, 403)
         self.assertContains(response, "Форма устарела", status_code=403)
         self.assertContains(response, "Открыть в браузере", status_code=403)
+
+
+class BrevoBackendTests(TestCase):
+    @override_settings(BREVO_API_KEY="test-key")
+    def test_sends_json_to_brevo(self):
+        import json
+        from unittest import mock
+
+        from django.core.mail import EmailMessage
+
+        from core.email import BrevoEmailBackend
+
+        response = mock.MagicMock(status=201)
+        response.__enter__.return_value = response
+        with mock.patch("urllib.request.urlopen", return_value=response) as urlopen:
+            sent = BrevoEmailBackend().send_messages(
+                [EmailMessage("Тема", "Текст", "TOIIM <hello@example.kz>", ["a@example.kz"])]
+            )
+        self.assertEqual(sent, 1)
+        request = urlopen.call_args[0][0]
+        payload = json.loads(request.data)
+        self.assertEqual(payload["sender"], {"email": "hello@example.kz", "name": "TOIIM"})
+        self.assertEqual(payload["to"], [{"email": "a@example.kz"}])
+        self.assertEqual(request.get_header("Api-key"), "test-key")

@@ -356,6 +356,10 @@ a.fav-form-icon:hover, .fav-form-icon .fav-btn:hover { transform: scale(1.08); b
 .auth-card form { display: grid; gap: 16px; }
 .auth-switch { margin-top: 20px; text-align: center; color: var(--muted); font-size: 15px; }
 .auth-switch a { color: var(--navy); font-weight: 600; }
+.auth-forgot { margin: -8px 0 0; text-align: right; font-size: 14px; }
+.auth-forgot a { color: var(--navy); font-weight: 600; }
+.hp-field { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.form-error a { color: inherit; font-weight: 600; text-decoration: underline; }
 .choice-group { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
 .choice-group legend { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
 .choice { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); cursor: pointer; font-size: 15px; font-weight: 500 !important; color: var(--text) !important; }

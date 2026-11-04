@@ -1,7 +1,7 @@
 from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, UserCreationForm
 
 from catalog.models import City
 
@@ -14,6 +14,31 @@ def validate_phone(value):
     digits = "".join(ch for ch in value if ch.isdigit())
     if value and not 10 <= len(digits) <= 15:
         raise forms.ValidationError("Введите номер телефона, например +7 700 000 00 00.")
+
+
+class LoginForm(AuthenticationForm):
+    """Вход. Если почта ещё не подтверждена, говорим об этом, а не «неверный пароль»."""
+
+    needs_activation = False
+
+    def clean(self):
+        try:
+            return super().clean()
+        except forms.ValidationError:
+            username = self.cleaned_data.get("username")
+            password = self.cleaned_data.get("password")
+            user = User.objects.filter(username=username).first() if username else None
+            if user and not user.is_active and password and user.check_password(password):
+                self.needs_activation = True
+            raise
+
+
+class ResetForm(PasswordResetForm):
+    email = forms.EmailField(label="Почта", max_length=254, widget=forms.EmailInput(attrs={"autocomplete": "email"}))
+
+
+class EmailForm(forms.Form):
+    email = forms.EmailField(label="Почта")
 
 
 class SignUpForm(UserCreationForm):
@@ -43,11 +68,15 @@ class SignUpForm(UserCreationForm):
         user.first_name = self.cleaned_data["first_name"]
         user.email = self.cleaned_data["email"]
         if commit:
-            user.save()  # профиль создаётся сигналом
-            profile = user.profile
-            profile.role = self.cleaned_data["role"]
-            profile.phone = self.cleaned_data.get("phone", "")
-            profile.save()
+            self.save_with_profile(user)
+        return user
+
+    def save_with_profile(self, user):
+        user.save()  # профиль создаётся сигналом
+        profile = user.profile
+        profile.role = self.cleaned_data["role"]
+        profile.phone = self.cleaned_data.get("phone", "")
+        profile.save()
         return user
 
 

@@ -81,6 +81,8 @@ def service_detail(request, slug):
         "review_form": ReviewForm(instance=my_review),
         "my_review": my_review,
         "is_owner": request.user.is_authenticated and service.owner_id == request.user.pk,
+        "can_review": request.user.is_authenticated and service.owner_id != request.user.pk
+        and not _is_provider(request.user),
         "packages": service.packages.all(),
         "busy_slots": service.busy_slots.filter(
             date__gte=timezone.localdate(), date__lte=timezone.localdate() + timedelta(days=90),
@@ -117,12 +119,21 @@ def toggle_favorite(request, slug):
     return _back(request, service.get_absolute_url())
 
 
+def _is_provider(user):
+    """Исполнители не оценивают друг друга: так конкуренты не испортят рейтинг."""
+    profile = getattr(user, "profile", None)
+    return bool(profile and profile.is_provider)
+
+
 @login_required
 @require_POST
 def submit_review(request, slug):
     service = get_object_or_404(Service.objects.published(), slug=slug)
     if service.owner_id == request.user.pk:
         messages.error(request, "Нельзя оставить отзыв о своей услуге.")
+        return redirect(service.get_absolute_url() + "#reviews")
+    if _is_provider(request.user):
+        messages.error(request, "Отзывы и оценки оставляют только клиенты.")
         return redirect(service.get_absolute_url() + "#reviews")
 
     existing = Review.objects.filter(service=service, user=request.user).first()

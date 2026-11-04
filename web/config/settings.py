@@ -147,7 +147,7 @@ LOGIN_REDIRECT_URL = "accounts:profile"
 LOGOUT_REDIRECT_URL = "core:home"
 
 # Версия стилей и скриптов: увеличивайте, если браузер показывает старый дизайн.
-ASSET_VERSION = "6"
+ASSET_VERSION = "7"
 
 
 REST_FRAMEWORK = {
@@ -163,6 +163,22 @@ TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_ADMIN_CHAT_ID = os.environ.get("TELEGRAM_ADMIN_CHAT_ID", "")
 # Секретный ключ, по которому бот создаёт заявки через API. Пусто = создание заявок через API выключено.
 BOT_API_KEY = os.environ.get("BOT_API_KEY", "")
+
+
+# Почта: подтверждение регистрации и сброс пароля.
+# Render free закрывает SMTP, поэтому письма идут через HTTP API Brevo (см. core/email.py).
+BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "TOIIM <noreply@toiim.kz>")
+EMAIL_BACKEND = (
+    "core.email.BrevoEmailBackend" if BREVO_API_KEY else "django.core.mail.backends.console.EmailBackend"
+)
+# Без почтового сервиса подтверждать почту нечем, поэтому проверка включается вместе с BREVO_API_KEY.
+EMAIL_VERIFICATION = env_bool("EMAIL_VERIFICATION", bool(BREVO_API_KEY))
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 24  # ссылки из писем действуют сутки
+
+# Защита от ботов: сколько раз с одного IP можно за час регистрироваться и просить письма.
+SIGNUPS_PER_IP_PER_HOUR = int(os.environ.get("SIGNUPS_PER_IP_PER_HOUR", "5"))
+EMAILS_PER_IP_PER_HOUR = int(os.environ.get("EMAILS_PER_IP_PER_HOUR", "5"))
 
 
 # Безопасность в продакшене (HTTPS).
