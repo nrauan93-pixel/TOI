@@ -1,0 +1,21 @@
+{
+ "username": "koktobe_hall",
+ "email": "alatau.mill2017@mail.ru",
+ "first_name": "Kok Tobe Hall",
+ "service": {
+  "slug": "koktobe-hall-almaty",
+  "category": "toikhana",
+  "city": "almaty",
+  "title": "Kok Tobe Hall — банкетный и конгресс-холл",
+  "short_description": "Площадка до 500 гостей на Кок-Тобе с видом на горы и город",
+  "description": "Kok Tobe Hall — конгресс-холл, банкетный зал и ивент-пространство на Кок-Тобе, ул. Омаровой, 35а. Универсальная площадка для больших событий до 500 гостей.\n\nДля чего подходит:\n• Свадьбы и тои на несколько сотен гостей\n• Юбилеи и семейные торжества\n• Корпоративы, в сезон есть готовые новогодние программы\n• Конференции и презентации\n\nПанорамные окна с видом на горы и город, терраса.\n\nЧасы работы: ежедневно 11:00–24:00.\nОплата: карта, наличные, QR и перевод.\nСтоимость банкета уточните в заявке.",
+  "price_from": 0,
+  "price_unit": "guest",
+  "capacity_max": 500,
+  "address": "Кок-Тобе, ул. Омаровой, 35а",
+  "phone": "+7 701 997 7770",
+  "instagram": "koktobe.hall"
+ },
+ "packages": [],
+ "password_hash": "pbkdf2_sha256$1000000$ZI1ZnFhUcb8rNvz5QhuXcy$KmH/krQYIQ8PsUvzJs+jPLwCXdsC67rjTjHMn6LduMI="
+}

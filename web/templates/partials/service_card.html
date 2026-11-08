@@ -15,7 +15,7 @@
     <h3 class="card-title"><a href="{{ service.get_absolute_url }}">{{ service.title }}</a></h3>
     <p class="card-text">{{ service.short_description }}</p>
     <div class="card-footer">
-      <p class="price"><span class="price-from">от</span> {{ service.price_from|tenge }} <span class="price-unit">{{ service.get_price_unit_display }}</span></p>
+      <p class="price">{% if service.price_from %}<span class="price-from">от</span> {{ service.price_from|tenge }} <span class="price-unit">{{ service.get_price_unit_display }}</span>{% else %}Цена по запросу{% endif %}</p>
       {% if service.reviews_count %}
       <p class="rating" aria-label="Рейтинг {{ service.rating_avg|floatformat:1 }} из 5, отзывов: {{ service.reviews_count }}">
         {% icon "star" 16 "icon-star" %}{{ service.rating_avg|floatformat:1 }} <span>({{ service.reviews_count }})</span>

@@ -8,4 +8,5 @@ python manage.py migrate --no-input
 python manage.py seed_demo --base
 python manage.py remove_demo
 python manage.py add_gulvar
+python manage.py add_partners
 python manage.py ensure_superuser

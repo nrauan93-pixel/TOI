@@ -188,3 +188,24 @@ class PasswordResetOtherEmailTests(TestCase):
         response = self.client.post(reverse("accounts:password_reset"), {"email": "other@example.kz"}, follow=True)
         self.assertContains(response, "Проверьте почту")
         self.assertEqual(len(mail.outbox), 0)
+
+
+class AdminCreatesProviderTests(TestCase):
+    def test_admin_can_add_provider_without_email_confirmation(self):
+        admin = User.objects.create_superuser("boss", "boss@example.kz", "Boss-Strong-Pass-2026")
+        self.client.force_login(admin)
+        self.assertContains(self.client.get(reverse("admin:auth_user_add")), "Кто это")
+        response = self.client.post(reverse("admin:auth_user_add"), {
+            "username": "dancers", "password1": "Dance-Strong-Pass-2026", "password2": "Dance-Strong-Pass-2026",
+            "usable_password": "true", "role": "provider", "first_name": "Шоу", "email": "show@example.kz",
+        })
+        self.assertEqual(response.status_code, 302, getattr(response, "context", None) and response.context.get("errors"))
+        user = User.objects.get(username="dancers")
+        self.assertTrue(user.is_active)
+        self.assertEqual(user.profile.role, "provider")
+        self.client.logout()
+        self.assertTrue(self.client.login(username="dancers", password="Dance-Strong-Pass-2026"))
+
+        # Страница редактирования созданного аккаунта тоже открывается.
+        self.client.force_login(admin)
+        self.assertEqual(self.client.get(reverse("admin:auth_user_change", args=[user.pk])).status_code, 200)

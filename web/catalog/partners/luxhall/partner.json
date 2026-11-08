@@ -1,0 +1,22 @@
+{
+ "username": "luxhall",
+ "email": "luxhall.kz@gmail.com",
+ "first_name": "LuxHall",
+ "service": {
+  "slug": "luxhall-almaty",
+  "category": "toikhana",
+  "city": "almaty",
+  "title": "LuxHall — банкетные залы на Достык",
+  "short_description": "Залы от 50 до 1000 гостей, свой декор, свет и звук",
+  "description": "LuxHall — банкетные залы на пр. Достык, 341/1 (Медеуский район). Несколько залов разной вместимости: от камерных встреч на 50 человек до больших тоев до 1000 гостей. Основной зал 1200 м².\n\nДля чего подходит: свадьбы и тои, юбилеи, корпоративы, поминальные обеды.\n\nЧто есть:\n• Банкетное меню от шефа, своя кухня\n• Сервировка и декор зала в выбранном стиле\n• Свет и звук для выступлений и танцев\n• VIP-комната и гримёрки для артистов\n• Личный менеджер на всех этапах и координация в день события\n• Парковка\n\nСтоимость уточните в заявке.\nСайт: luxhall.kz",
+  "price_from": 0,
+  "price_unit": "guest",
+  "capacity_min": 50,
+  "capacity_max": 1000,
+  "address": "пр. Достык, 341/1",
+  "phone": "+7 747 343 6216",
+  "instagram": "luxhall.kz"
+ },
+ "packages": [],
+ "password_hash": "pbkdf2_sha256$1000000$1cEMFTEV6T4V6CJvP2vLMp$cF1B7Dr0BaarhiQR4rPFijStAPI2YsgIiLQ0hAyClj8="
+}

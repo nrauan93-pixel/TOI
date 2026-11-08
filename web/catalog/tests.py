@@ -697,3 +697,41 @@ class CatalogFilterCategoriesTests(TestCase):
         self.assertNotContains(page, 'name="kind"')
         for category in Category.objects.all():
             self.assertContains(page, f'value="{category.slug}"')
+
+
+class AddPartnersCommandTests(TestCase):
+    def test_creates_partner_from_folder_once(self):
+        import json
+        import tempfile
+        from pathlib import Path
+        from unittest import mock
+
+        from PIL import Image
+
+        call_command("seed_demo", base=True, verbosity=0)
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "show-aru"
+            folder.mkdir()
+            Image.new("RGB", (40, 30), "gold").save(folder / "01-main.jpg")
+            (folder / "partner.json").write_text(json.dumps({
+                "username": "show_aru", "email": "aru@example.kz", "first_name": "Ару",
+                "service": {
+                    "slug": "show-aru-almaty", "category": "show", "city": "almaty",
+                    "title": "Шоу-балет «Ару»", "short_description": "Танцы на той",
+                    "price_from": 150000, "price_unit": "event", "phone": "+7 700 000 00 01",
+                },
+                "packages": [{"title": "2 номера", "price": 150000, "includes": ["4 танцора", "2 номера"]}],
+            }, ensure_ascii=False), encoding="utf-8")
+            with mock.patch("catalog.management.commands.add_partners.PARTNERS_DIR", Path(tmp)), \
+                    mock.patch.dict("os.environ", {"PASSWORD_SHOW_ARU": "Aru-Strong-Pass-2026"}):
+                call_command("add_partners", verbosity=0)
+                call_command("add_partners", verbosity=0)
+
+        service = Service.objects.get(slug="show-aru-almaty")
+        self.assertEqual(service.category.slug, "show")
+        self.assertTrue(service.is_verified)
+        self.assertEqual(service.packages.count(), 1)
+        self.assertEqual(service.images.count(), 1)
+        self.assertTrue(service.owner.check_password("Aru-Strong-Pass-2026"))
+        self.assertTrue(service.owner.profile.is_provider)
+        self.assertEqual(self.client.get(service.get_absolute_url()).status_code, 200)

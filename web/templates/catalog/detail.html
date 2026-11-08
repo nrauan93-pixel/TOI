@@ -53,7 +53,7 @@
       {% endif %}
 
       <dl class="facts">
-        <div><dt>{% icon "wallet" 18 %}Цена</dt><dd>от {{ service.price_from|tenge }} {{ service.get_price_unit_display }}</dd></div>
+        <div><dt>{% icon "wallet" 18 %}Цена</dt><dd>{% if service.price_from %}от {{ service.price_from|tenge }} {{ service.get_price_unit_display }}{% else %}по запросу, уточните в заявке{% endif %}</dd></div>
         {% if service.capacity_max %}<div><dt>{% icon "users" 18 %}Вместимость</dt><dd>{% if service.capacity_min %}{{ service.capacity_min }}–{% endif %}{{ service.capacity_max }} гостей</dd></div>{% endif %}
         {% if service.address %}<div><dt>{% icon "map-pin" 18 %}Адрес</dt><dd>{{ service.address }}</dd></div>{% endif %}
         {% if service.phone %}<div><dt>{% icon "phone" 18 %}Телефон</dt><dd><a href="tel:{{ service.phone }}">{{ service.phone }}</a></dd></div>{% endif %}
@@ -127,7 +127,7 @@
 
     <aside class="detail-aside" id="request">
       <div class="request-card">
-        <p class="price price-lg"><span class="price-from">от</span> {{ service.price_from|tenge }} <span class="price-unit">{{ service.get_price_unit_display }}</span></p>
+        <p class="price price-lg">{% if service.price_from %}<span class="price-from">от</span> {{ service.price_from|tenge }} <span class="price-unit">{{ service.get_price_unit_display }}</span>{% else %}Цена по запросу{% endif %}</p>
         <h2>Оставить заявку</h2>
         <form method="post" action="{{ service.get_absolute_url }}#request" novalidate data-once>
           {% csrf_token %}

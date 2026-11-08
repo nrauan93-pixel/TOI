@@ -28,7 +28,7 @@
         <li class="list-row">
           <div>
             {% if service.status == "published" %}<a href="{{ service.get_absolute_url }}">{{ service.title }}</a>{% else %}<strong>{{ service.title }}</strong>{% endif %}
-            <p class="muted">{{ service.category.name }} · {{ service.city.name }} · от {{ service.price_from|tenge }}{% if service.new_requests %} · новых заявок: {{ service.new_requests }}{% endif %}</p>
+            <p class="muted">{{ service.category.name }} · {{ service.city.name }} · {% if service.price_from %}от {{ service.price_from|tenge }}{% else %}цена по запросу{% endif %}{% if service.new_requests %} · новых заявок: {{ service.new_requests }}{% endif %}</p>
             {% if service.status == "pending" %}<p class="muted">Проверяем карточку. Клиенты увидят её после проверки.</p>{% endif %}
             {% if service.status == "rejected" %}<p class="muted">Карточку не опубликовали. Исправьте её и сохраните ещё раз.</p>{% endif %}
             <div class="service-links">

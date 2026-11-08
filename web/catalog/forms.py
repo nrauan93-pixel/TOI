@@ -151,7 +151,7 @@ class ServiceForm(forms.ModelForm):
         }
         help_texts = {
             "capacity_min": "Для площадок. Исполнителям можно оставить пустым.",
-            "price_from": "Примерная цена в тенге, только цифры.",
+            "price_from": "Примерная цена в тенге, только цифры. Поставьте 0, если цена по запросу.",
         }
 
     def __init__(self, *args, **kwargs):
