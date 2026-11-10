@@ -13,4 +13,6 @@ def site_settings(request):
         # Меняется с каждым шагом, чтобы браузер не показывал старые стили из кэша.
         "ASSET_VERSION": settings.ASSET_VERSION,
         "FAVORITE_IDS": favorite_ids,
+        "YANDEX_METRIKA_ID": settings.YANDEX_METRIKA_ID,
+        "GA_MEASUREMENT_ID": settings.GA_MEASUREMENT_ID,
     }

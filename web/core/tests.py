@@ -73,3 +73,19 @@ class BrevoBackendTests(TestCase):
         self.assertEqual(payload["sender"], {"email": "hello@example.kz", "name": "TOIIM"})
         self.assertEqual(payload["to"], [{"email": "a@example.kz"}])
         self.assertEqual(request.get_header("Api-key"), "test-key")
+
+
+from django.test import TestCase as _TC, override_settings as _ov
+
+
+class AnalyticsTests(_TC):
+    def test_no_counter_by_default(self):
+        html = self.client.get("/").content.decode()
+        self.assertNotIn("mc.yandex.ru", html)
+        self.assertNotIn("googletagmanager", html)
+
+    @_ov(YANDEX_METRIKA_ID="12345678", GA_MEASUREMENT_ID="G-ABC123")
+    def test_counters_when_set(self):
+        html = self.client.get("/").content.decode()
+        self.assertIn('ym(12345678, "init"', html)
+        self.assertIn("gtag/js?id=G-ABC123", html)

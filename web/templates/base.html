@@ -16,6 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/main.css' %}?v={{ ASSET_VERSION }}">
   <script>document.documentElement.classList.add("js")</script>
+  {% include "partials/analytics.html" %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
   <a class="skip-link" href="#main">{% translate "Перейти к содержимому" %}</a>

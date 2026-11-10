@@ -158,6 +158,11 @@ REST_FRAMEWORK = {
 
 # Telegram: ссылка на бота публичная, токен — секрет и живёт только в .env.
 TELEGRAM_BOT_USERNAME = os.environ.get("TELEGRAM_BOT_USERNAME", "toi3_bot")
+
+# Статистика посещений. Номер счётчика задаётся в Render → Environment.
+# Пусто — счётчик не подключается. Берём только цифры/буквы, чтобы в страницу не попал чужой код.
+YANDEX_METRIKA_ID = "".join(c for c in os.environ.get("YANDEX_METRIKA_ID", "") if c.isdigit())
+GA_MEASUREMENT_ID = "".join(c for c in os.environ.get("GA_MEASUREMENT_ID", "").upper() if c.isalnum() or c == "-")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 # Куда присылать уведомления о новых заявках (личный чат админа или группа команды).
 TELEGRAM_ADMIN_CHAT_ID = os.environ.get("TELEGRAM_ADMIN_CHAT_ID", "")
