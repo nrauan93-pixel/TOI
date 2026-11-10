@@ -1,0 +1,33 @@
+{
+ "username": "resident_ballroom",
+ "email": "restaurantrch@gmail.com",
+ "first_name": "Resident Ballroom",
+ "service": {
+  "slug": "resident-ballroom-almaty",
+  "category": "toikhana",
+  "city": "almaty",
+  "title": "Resident Ballroom — банкетный зал",
+  "short_description": "Современный банкетный зал до 250 гостей в центре, на Желтоксан",
+  "description": "Resident Ballroom — банкетный зал на ул. Желтоксан, 23 (Алмалинский район). Современный дизайн, сцена со светом и LED-экраном, зал до 250 гостей.\n\nДля чего подходит:\n• Свадьбы и тои\n• Юбилеи и семейные торжества\n• Корпоративы и частные мероприятия\n• Поминальные обеды\n\nЧасы работы: ежедневно 10:00–24:00, по предварительной записи по телефону или в WhatsApp.\nСтоимость банкета уточните в заявке.",
+  "price_from": 0,
+  "price_unit": "guest",
+  "capacity_max": 250,
+  "address": "ул. Желтоксан, 23",
+  "phone": "+7 777 715 8877",
+  "instagram": "resident_ballroom"
+ },
+ "photo_alts": {
+  "01": "Зал Resident Ballroom",
+  "02": "Банкетный зал со светом",
+  "03": "Сцена и сервировка",
+  "04": "Длинный банкетный стол",
+  "05": "Банкетный стол у окон",
+  "06": "Сервировка с закусками",
+  "07": "Декор с шарами",
+  "08": "Фотозона",
+  "09": "Новогодняя сервировка",
+  "10": "Вход и вывеска"
+ },
+ "packages": [],
+ "password_hash": "pbkdf2_sha256$1000000$iX8X9FAjjqaP00Vi5EVuVI$Ol883OdQuDhcKzTt/8sP7P8OKDYWZ5wGwiPM7Z/Q6X8="
+}
